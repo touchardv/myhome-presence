@@ -5,13 +5,18 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/touchardv/myhome-presence/config"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/touchardv/myhome-presence/api"
+	"github.com/touchardv/myhome-presence/device"
 )
 
 func main() {
 	log.Info("Starting...")
-	server := api.NewServer()
+	config := config.Retrieve()
+	registry := device.NewRegistry(config.Devices)
+	server := api.NewServer(registry)
 	server.Start()
 
 	c := make(chan os.Signal, 1)

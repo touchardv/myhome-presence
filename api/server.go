@@ -7,19 +7,27 @@ import (
 
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
+	"github.com/touchardv/myhome-presence/device"
 )
+
+type apiContext struct {
+	registry *device.Registry
+}
 
 // Server is a wrapper around the router and the HTTP server.
 type Server struct {
+	apiContext
 	server  *http.Server
 	router  *mux.Router
 	stopped chan bool
 }
 
 // NewServer creates and initializes a new API server.
-func NewServer() *Server {
+func NewServer(r *device.Registry) *Server {
+	apiContext := apiContext{r}
 	router := mux.NewRouter()
 	router.HandleFunc("/health-check", healthCheck).Methods("GET")
+	router.HandleFunc("/api/devices", apiContext.listDevices).Methods("GET")
 
 	server := &http.Server{
 		Addr:         "0.0.0.0:8080",

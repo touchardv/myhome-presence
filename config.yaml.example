@@ -1,5 +1,5 @@
-devices:
+bluetooth_devices: []
+ip_devices:
 - description: My laptop
-  tracker: ip
   address: 10.10.10.123
   identifier: AB:CD:EF:01:02:02

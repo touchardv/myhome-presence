@@ -20,9 +20,9 @@ type Registry struct {
 }
 
 // NewRegistry builds a new device registry.
-func NewRegistry(config []config.Device) *Registry {
+func NewRegistry(config config.Config) *Registry {
 	devices := make([]Device, 0)
-	for _, d := range config {
+	for _, d := range config.IPDevices {
 		device := Device{Device: d, Present: false}
 		devices = append(devices, device)
 	}

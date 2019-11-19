@@ -15,7 +15,7 @@ import (
 func main() {
 	log.Info("Starting...")
 	config := config.Retrieve()
-	registry := device.NewRegistry(config.Devices)
+	registry := device.NewRegistry(config)
 	server := api.NewServer(registry)
 	server.Start()
 

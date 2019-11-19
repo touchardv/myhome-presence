@@ -11,14 +11,14 @@ import (
 // Device represents a single device being tracked.
 type Device struct {
 	Description string
-	Tracker     string
 	Address     string
 	Identifier  string
 }
 
 // Config contains the list of all devices to be tracked.
 type Config struct {
-	Devices []Device
+	BluetoothDevices []Device `yaml:"bluetooth_devices"`
+	IPDevices        []Device `yaml:"ip_devices"`
 }
 
 const defaultFilename = "config.yaml"

@@ -3,6 +3,8 @@ package device
 import (
 	"time"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/touchardv/myhome-presence/config"
 )
 
@@ -16,7 +18,8 @@ type Device struct {
 // Registry maintains the status of all tracked devices
 // together with their presence status.
 type Registry struct {
-	devices []Device
+	devices   []Device
+	ipTracker ipTracker
 }
 
 // NewRegistry builds a new device registry.
@@ -26,10 +29,27 @@ func NewRegistry(config config.Config) *Registry {
 		device := Device{Device: d, Present: false}
 		devices = append(devices, device)
 	}
-	return &Registry{devices}
+	return &Registry{devices, newIPTracker()}
 }
 
 // GetDevices returns all tracked devices.
 func (r *Registry) GetDevices() []Device {
 	return r.devices
+}
+
+func (r *Registry) notify(device Device, present bool) {
+	log.Info("Device ", device.Identifier, " presence=", present)
+}
+
+// Start activates the tracking of devices.
+func (r *Registry) Start() {
+	log.Info("Starting: registry")
+	r.ipTracker.track(r.devices, r)
+}
+
+// Stop de-activates the tracking of devices.
+func (r *Registry) Stop() {
+	log.Info("Stopping: registry")
+	r.ipTracker.stop()
+	log.Info("Stopped: registry")
 }

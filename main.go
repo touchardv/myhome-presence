@@ -17,6 +17,7 @@ func main() {
 	config := config.Retrieve()
 	registry := device.NewRegistry(config)
 	server := api.NewServer(registry)
+	registry.Start()
 	server.Start()
 
 	c := make(chan os.Signal, 1)
@@ -24,6 +25,7 @@ func main() {
 	<-c
 
 	server.Stop()
+	registry.Stop()
 	log.Info("...Stopped")
 	log.Exit(0)
 }

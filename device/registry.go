@@ -18,33 +18,46 @@ type Device struct {
 // Registry maintains the status of all tracked devices
 // together with their presence status.
 type Registry struct {
-	devices   []Device
+	devices   map[string]*Device
 	ipTracker ipTracker
 }
 
 // NewRegistry builds a new device registry.
 func NewRegistry(config config.Config) *Registry {
-	devices := make([]Device, 0)
+	devices := make(map[string]*Device, 0)
 	for _, d := range config.IPDevices {
 		device := Device{Device: d, Present: false}
-		devices = append(devices, device)
+		devices[device.Identifier] = &device
 	}
 	return &Registry{devices, newIPTracker()}
 }
 
 // GetDevices returns all tracked devices.
 func (r *Registry) GetDevices() []Device {
-	return r.devices
+	devices := make([]Device, 0)
+	for _, d := range r.devices {
+		devices = append(devices, *d)
+	}
+	return devices
 }
 
 func (r *Registry) notify(device Device, present bool) {
+	d, found := r.devices[device.Identifier]
+	if found == false {
+		log.Warn("Unknown device: ", device.Identifier)
+		return
+	}
+	d.Present = present
+	if present {
+		d.LastSeenAt = time.Now()
+	}
 	log.Info("Device ", device.Identifier, " presence=", present)
 }
 
 // Start activates the tracking of devices.
 func (r *Registry) Start() {
 	log.Info("Starting: registry")
-	r.ipTracker.track(r.devices, r)
+	r.ipTracker.track(r.GetDevices(), r)
 }
 
 // Stop de-activates the tracking of devices.

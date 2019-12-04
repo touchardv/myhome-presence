@@ -1,0 +1,15 @@
+[Unit]
+Description=MyHome Presence
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+ExecStart=/usr/bin/myhome-presence --daemon
+
+SyslogIdentifier=myhome-presence
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

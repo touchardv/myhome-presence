@@ -47,11 +47,15 @@ func (r *Registry) notify(device Device, present bool) {
 		log.Warn("Unknown device: ", device.Identifier)
 		return
 	}
-	d.Present = present
-	if present {
-		d.LastSeenAt = time.Now()
+	if d.Present != present {
+		if present {
+			log.Info("Device '", device.Description, "' is present")
+			d.LastSeenAt = time.Now()
+		} else {
+			log.Info("Device '", device.Description, "' is absent")
+		}
+		d.Present = present
 	}
-	log.Info("Device ", device.Identifier, " presence=", present)
 }
 
 // Start activates the tracking of devices.

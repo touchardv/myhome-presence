@@ -2,6 +2,7 @@ package config
 
 import (
 	"io/ioutil"
+	"path/filepath"
 
 	"gopkg.in/yaml.v2"
 
@@ -21,17 +22,22 @@ type Config struct {
 	IPDevices        []Device `yaml:"ip_devices"`
 }
 
+// DefaultLocation corresponds to the default path to the directory where
+// the configuration file is stored.
+const DefaultLocation = "/etc/myhome"
+
 const defaultFilename = "config.yaml"
 
 // Retrieve reads and parses the configuration file.
-func Retrieve() Config {
+func Retrieve(location string) Config {
 	config := Config{}
-	content, err := ioutil.ReadFile(defaultFilename)
+	filename := filepath.Join(location, defaultFilename)
+	content, err := ioutil.ReadFile(filename)
 	if err == nil {
 		err = yaml.Unmarshal(content, &config)
 	}
 	if err != nil {
-		log.Error(err)
+		log.Fatal(err)
 	}
 	return config
 }

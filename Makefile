@@ -16,7 +16,7 @@ clean:
 	rm -rf $(BUILD_DIR)
 
 run: $(BUILD_DIR)/$(BINARY)
-	$(BUILD_DIR)/$(BINARY)	
+	$(BUILD_DIR)/$(BINARY) --config-location=`pwd` --log-level=debug
 
 test:
 	go test -v -cover ./...

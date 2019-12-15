@@ -5,9 +5,11 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"github.com/touchardv/myhome-presence/device"
+	"github.com/touchardv/myhome-presence/docs"
 )
 
 type apiContext struct {
@@ -26,7 +28,15 @@ type Server struct {
 func NewServer(r *device.Registry) *Server {
 	apiContext := apiContext{r}
 	router := mux.NewRouter()
+
+	cors := handlers.CORS(
+		handlers.AllowedHeaders([]string{"content-type"}),
+		handlers.AllowedOrigins([]string{"*"}),
+		handlers.AllowCredentials())
+
+	router.Use(cors)
 	router.HandleFunc("/health-check", healthCheck).Methods("GET")
+	router.HandleFunc("/api/docs", docs.GetSwaggerDocument).Methods("GET")
 	router.HandleFunc("/api/devices", apiContext.listDevices).Methods("GET")
 
 	server := &http.Server{

@@ -24,7 +24,7 @@ deploy: test $(BUILD_DIR)/$(BINARY)-linux-arm
 	ssh $(TARGET) sudo cp /tmp/$(BINARY)-linux-arm /usr/bin/myhome-presence
 	ssh $(TARGET) sudo systemctl start myhome-presence
 
-run: $(BUILD_DIR)/$(BINARY)
+run: $(BUILD_DIR)/$(BINARY) swagger-docs
 	$(BUILD_DIR)/$(BINARY) --config-location=`pwd` --log-level=debug
 
 setup:
@@ -34,6 +34,9 @@ setup:
 	scp myhome-presence.service  $(TARGET):/tmp
 	ssh $(TARGET) sudo cp /tmp/myhome-presence.service /etc/systemd/system/myhome-presence.service
 	ssh $(TARGET) sudo systemctl enable myhome-presence
+
+swagger-docs:
+	swagger generate spec -o ./swagger.json main.go
 
 test:
 	go test -v -cover ./...

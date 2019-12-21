@@ -30,12 +30,12 @@ func newIPTracker() ipTracker {
 
 const data = "AreYouThere"
 
-func (t *ipTracker) ping(device Device) bool {
+func (t *ipTracker) ping(device Device) (bool, error) {
 	sourceIP := net.ParseIP("0.0.0.0")
 	socket, err := icmp.ListenPacket("udp4", sourceIP.String())
 	if err != nil {
 		log.Warn("Ping failed: ", err)
-		return false
+		return false, err
 	}
 	defer socket.Close()
 
@@ -48,7 +48,7 @@ func (t *ipTracker) ping(device Device) bool {
 	_, err = socket.WriteTo(outgoingBytes, targetAddr)
 	if err != nil {
 		log.Warn("Ping failed: ", err)
-		return false
+		return false, err
 	}
 	now := time.Now()
 	socket.SetReadDeadline(now.Add(5 * time.Second))
@@ -56,7 +56,11 @@ func (t *ipTracker) ping(device Device) bool {
 	for {
 		_, remoteAddr, err := socket.ReadFrom(incomingBytes)
 		if err != nil {
-			return false
+			// check if it is a timeout error
+			if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
+				return false, nil
+			}
+			return false, err
 		}
 		if remoteAddr.String() != targetAddr.String() {
 			continue
@@ -65,7 +69,7 @@ func (t *ipTracker) ping(device Device) bool {
 			continue
 		}
 		// TODO inspect further the incoming ICMP echo reply
-		return true
+		return true, nil
 	}
 }
 
@@ -85,8 +89,10 @@ func (t *ipTracker) track(devices []Device, n notifier) {
 
 			case <-ticker.C:
 				for _, device := range devices {
-					present := t.ping(device)
-					n.notify(device, present)
+					present, err := t.ping(device)
+					if err == nil {
+						n.notify(device, present)
+					}
 				}
 			}
 		}

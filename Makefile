@@ -28,11 +28,11 @@ run: $(BUILD_DIR)/$(BINARY) swagger-docs
 	$(BUILD_DIR)/$(BINARY) --config-location=`pwd` --log-level=debug
 
 setup:
-	ssh $(TARGET) sudo sysctl -w net.ipv4.ping_group_range="0 65535"
 	ssh $(TARGET) sudo mkdir -p /etc/myhome /var/log/myhome
 	ssh $(TARGET) sudo chown -R pi:pi /etc/myhome /var/log/myhome
-	scp myhome-presence.service  $(TARGET):/tmp
-	ssh $(TARGET) sudo cp /tmp/myhome-presence.service /etc/systemd/system/myhome-presence.service
+	scp myhome-presence.*  $(TARGET):/tmp
+	ssh $(TARGET) sudo mv /tmp/myhome-presence.conf /etc/sysctl.d/myhome-presence.conf
+	ssh $(TARGET) sudo mv /tmp/myhome-presence.service /etc/systemd/system/myhome-presence.service
 	ssh $(TARGET) sudo systemctl enable myhome-presence
 
 swagger-docs:

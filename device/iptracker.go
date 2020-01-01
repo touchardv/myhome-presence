@@ -1,6 +1,7 @@
 package device
 
 import (
+	"encoding/binary"
 	"net"
 	"os"
 	"time"
@@ -67,8 +68,12 @@ func (t *ipTracker) waitForPingReplies(n notifier) {
 			if ipv4.ICMPType(incomingBytes[0]) != ipv4.ICMPTypeEchoReply {
 				continue
 			}
+			sequenceNumber := binary.BigEndian.Uint16(incomingBytes[6:8])
+			if sequenceNumber != uint16(t.sequenceNumber) {
+				log.Warn("Ignore echo reply with wrong sequence: ", sequenceNumber, " expected: ", uint16(t.sequenceNumber))
+				continue
+			}
 			if device, ok := t.devices[remoteAddr.String()]; ok {
-				// TODO inspect further the incoming ICMP echo reply
 				n.notify(device, true)
 			} else {
 				log.Warn("Ignoring ping reply from: ", remoteAddr.String())

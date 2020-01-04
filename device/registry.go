@@ -41,20 +41,16 @@ func (r *Registry) GetDevices() []Device {
 	return devices
 }
 
-func (r *Registry) notify(device Device, present bool) {
-	d, found := r.devices[device.Identifier]
-	if found == false {
-		log.Warn("Unknown device: ", device.Identifier)
-		return
-	}
-	if d.Present != present {
-		if present {
+func (r *Registry) notifyPresent(device Device) {
+	if d, ok := r.devices[device.Identifier]; ok {
+		if d.Present == false {
 			log.Info("Device '", device.Description, "' is present")
 			d.LastSeenAt = time.Now()
-		} else {
-			log.Info("Device '", device.Description, "' is absent")
+			d.Present = true
 		}
-		d.Present = present
+	} else {
+		log.Warn("Unknown device: ", device.Identifier)
+		return
 	}
 }
 

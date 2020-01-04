@@ -34,7 +34,7 @@ func TestNotify(t *testing.T) {
 
 	d := Device{}
 	d.Identifier = "foo"
-	registry.notify(d, true)
+	registry.notifyPresent(d)
 
 	devices = registry.GetDevices()
 	assert.True(t, devices[0].Present)

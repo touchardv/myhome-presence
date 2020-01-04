@@ -12,7 +12,7 @@ import (
 )
 
 type notifier interface {
-	notify(device Device, present bool)
+	notifyPresent(device Device)
 }
 
 type ipTracker struct {
@@ -74,7 +74,7 @@ func (t *ipTracker) waitForPingReplies(n notifier) {
 				continue
 			}
 			if device, ok := t.devices[remoteAddr.String()]; ok {
-				n.notify(device, true)
+				n.notifyPresent(device)
 			} else {
 				log.Warn("Ignoring ping reply from: ", remoteAddr.String())
 			}

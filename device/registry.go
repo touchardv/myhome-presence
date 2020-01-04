@@ -48,25 +48,40 @@ func (r *Registry) GetDevices() []Device {
 	return devices
 }
 
-func (r *Registry) notifyPresent(device Device) {
-	if d, ok := r.devices[device.Identifier]; ok {
-		if d.Present == false {
-			log.Info("Device '", device.Description, "' is present")
-			d.LastSeenAt = time.Now()
-			d.Present = true
+func (r *Registry) handle(presence chan string) {
+	log.Info("Starting: presence handler")
+	for {
+		select {
+		case <-r.stopping:
+			log.Info("Stopped: presence handler")
+			return
+		case identifier := <-presence:
+			if d, ok := r.devices[identifier]; ok {
+				if d.Present == false {
+					log.Info("Device '", d.Description, "' is present")
+					d.Present = true
+				}
+				d.LastSeenAt = time.Now()
+			} else {
+				log.Warn("Unknown device: ", identifier)
+			}
 		}
-	} else {
-		log.Warn("Unknown device: ", device.Identifier)
-		return
 	}
 }
 
 // Start activates the tracking of devices.
 func (r *Registry) Start() {
 	log.Info("Starting: registry")
+	presence := make(chan string, 10)
 	r.waitGroup.Add(1)
 	go func() {
-		r.ipTracker.track(r.GetDevices(), r, r.stopping)
+		r.handle(presence)
+		r.waitGroup.Done()
+	}()
+
+	r.waitGroup.Add(1)
+	go func() {
+		r.ipTracker.track(r.GetDevices(), presence, r.stopping)
 		r.waitGroup.Done()
 	}()
 }
@@ -74,7 +89,7 @@ func (r *Registry) Start() {
 // Stop de-activates the tracking of devices.
 func (r *Registry) Stop() {
 	log.Info("Stopping: registry")
-	r.stopping <- true
+	close(r.stopping)
 	r.waitGroup.Wait()
 	log.Info("Stopped: registry")
 }

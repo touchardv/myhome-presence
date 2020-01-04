@@ -11,10 +11,6 @@ import (
 	"golang.org/x/net/ipv4"
 )
 
-type notifier interface {
-	notifyPresent(device Device)
-}
-
 type ipTracker struct {
 	sequenceNumber int
 	devices        map[string]Device
@@ -46,7 +42,7 @@ func (t *ipTracker) init(devices []Device) error {
 	return nil
 }
 
-func (t *ipTracker) waitForPingReplies(n notifier) {
+func (t *ipTracker) waitForPingReplies(presence chan string) {
 	go func() {
 		now := time.Now()
 		t.socket.SetReadDeadline(now.Add(15 * time.Second))
@@ -70,7 +66,7 @@ func (t *ipTracker) waitForPingReplies(n notifier) {
 				continue
 			}
 			if device, ok := t.devices[remoteAddr.String()]; ok {
-				n.notifyPresent(device)
+				presence <- device.Identifier
 			} else {
 				log.Warn("Ignoring ping reply from: ", remoteAddr.String())
 			}
@@ -97,7 +93,7 @@ func (t *ipTracker) ping(devices []Device) error {
 	return nil
 }
 
-func (t *ipTracker) track(devices []Device, n notifier, stopping chan bool) {
+func (t *ipTracker) track(devices []Device, presence chan string, stopping chan bool) {
 	err := t.init(devices)
 	if err != nil {
 		return
@@ -106,7 +102,7 @@ func (t *ipTracker) track(devices []Device, n notifier, stopping chan bool) {
 
 	log.Info("Starting: ip tracker")
 	for {
-		t.waitForPingReplies(n)
+		t.waitForPingReplies(presence)
 		t.ping(devices)
 
 		ticker := time.NewTicker(1 * time.Minute)

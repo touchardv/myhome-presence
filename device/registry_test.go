@@ -25,18 +25,23 @@ func TestGetDevices(t *testing.T) {
 	assert.Equal(t, "foo", devices[0].Identifier)
 }
 
-func TestNotify(t *testing.T) {
+func TestHandle(t *testing.T) {
 	registry := NewRegistry(cfg)
 	devices := registry.GetDevices()
 
 	assert.False(t, devices[0].Present)
 	assert.True(t, devices[0].LastSeenAt.IsZero())
 
+	presence := make(chan string)
 	d := Device{}
 	d.Identifier = "foo"
-	registry.notifyPresent(d)
+	go func() {
+		registry.handle(presence)
+	}()
+	presence <- "foo"
 
 	devices = registry.GetDevices()
 	assert.True(t, devices[0].Present)
 	assert.False(t, devices[0].LastSeenAt.IsZero())
+	close(registry.stopping)
 }

@@ -1,6 +1,7 @@
 package device
 
 import (
+	"sync"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -20,6 +21,8 @@ type Device struct {
 type Registry struct {
 	devices   map[string]*Device
 	ipTracker ipTracker
+	stopping  chan bool
+	waitGroup sync.WaitGroup
 }
 
 // NewRegistry builds a new device registry.
@@ -29,7 +32,11 @@ func NewRegistry(config config.Config) *Registry {
 		device := Device{Device: d, Present: false}
 		devices[device.Identifier] = &device
 	}
-	return &Registry{devices, newIPTracker()}
+	return &Registry{
+		devices:   devices,
+		ipTracker: newIPTracker(),
+		stopping:  make(chan bool),
+	}
 }
 
 // GetDevices returns all tracked devices.
@@ -57,12 +64,17 @@ func (r *Registry) notifyPresent(device Device) {
 // Start activates the tracking of devices.
 func (r *Registry) Start() {
 	log.Info("Starting: registry")
-	r.ipTracker.track(r.GetDevices(), r)
+	r.waitGroup.Add(1)
+	go func() {
+		r.ipTracker.track(r.GetDevices(), r, r.stopping)
+		r.waitGroup.Done()
+	}()
 }
 
 // Stop de-activates the tracking of devices.
 func (r *Registry) Stop() {
 	log.Info("Stopping: registry")
-	r.ipTracker.stop()
+	r.stopping <- true
+	r.waitGroup.Wait()
 	log.Info("Stopped: registry")
 }

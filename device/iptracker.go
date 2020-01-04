@@ -19,16 +19,12 @@ type ipTracker struct {
 	sequenceNumber int
 	devices        map[string]Device
 	socket         *icmp.PacketConn
-	stopping       chan bool
-	stopped        chan bool
 }
 
 func newIPTracker() ipTracker {
 	return ipTracker{
 		sequenceNumber: 0,
 		devices:        make(map[string]Device, 10),
-		stopping:       make(chan bool, 1),
-		stopped:        make(chan bool, 1),
 	}
 }
 
@@ -101,32 +97,26 @@ func (t *ipTracker) ping(devices []Device) error {
 	return nil
 }
 
-func (t *ipTracker) stop() {
-	t.stopping <- true
-	<-t.stopped
-}
+func (t *ipTracker) track(devices []Device, n notifier, stopping chan bool) {
+	err := t.init(devices)
+	if err != nil {
+		return
+	}
+	defer t.socket.Close()
 
-func (t *ipTracker) track(devices []Device, n notifier) {
-	go func() {
-		err := t.init(devices)
-		if err != nil {
+	log.Info("Starting: ip tracker")
+	for {
+		t.waitForPingReplies(n)
+		t.ping(devices)
+
+		ticker := time.NewTicker(1 * time.Minute)
+		select {
+		case <-stopping:
+			log.Info("Stopped: ip tracker")
 			return
+
+		case <-ticker.C:
+			break
 		}
-		defer t.socket.Close()
-
-		for {
-			t.waitForPingReplies(n)
-			t.ping(devices)
-
-			ticker := time.NewTicker(1 * time.Minute)
-			select {
-			case <-t.stopping:
-				t.stopped <- true
-				return
-
-			case <-ticker.C:
-				break
-			}
-		}
-	}()
+	}
 }

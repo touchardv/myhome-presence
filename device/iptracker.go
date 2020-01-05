@@ -75,7 +75,7 @@ func (t *ipTracker) waitForPingReplies(presence chan string) {
 	}()
 }
 
-func (t *ipTracker) ping(devices []config.Device) error {
+func (t *ipTracker) ping(devices []config.Device) {
 	t.sequenceNumber++
 	request := icmp.Echo{ID: os.Getpid(), Seq: t.sequenceNumber, Data: []byte(data)}
 	message := icmp.Message{Type: ipv4.ICMPTypeEcho, Body: &request}
@@ -88,10 +88,8 @@ func (t *ipTracker) ping(devices []config.Device) error {
 		_, err = t.socket.WriteTo(outgoingBytes, targetAddr)
 		if err != nil {
 			log.Warn("Ping failed: ", err)
-			return err
 		}
 	}
-	return nil
 }
 
 func (t *ipTracker) track(devices []config.Device, presence chan string, stopping chan struct{}) {

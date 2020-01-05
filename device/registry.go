@@ -21,7 +21,7 @@ type Device struct {
 type Registry struct {
 	devices   map[string]*Device
 	ipTracker ipTracker
-	stopping  chan bool
+	stopping  chan struct{}
 	waitGroup sync.WaitGroup
 }
 
@@ -35,7 +35,7 @@ func NewRegistry(config config.Config) *Registry {
 	return &Registry{
 		devices:   devices,
 		ipTracker: newIPTracker(),
-		stopping:  make(chan bool),
+		stopping:  make(chan struct{}),
 	}
 }
 

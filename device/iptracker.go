@@ -93,7 +93,7 @@ func (t *ipTracker) ping(devices []Device) error {
 	return nil
 }
 
-func (t *ipTracker) track(devices []Device, presence chan string, stopping chan bool) {
+func (t *ipTracker) track(devices []Device, presence chan string, stopping chan struct{}) {
 	err := t.init(devices)
 	if err != nil {
 		return

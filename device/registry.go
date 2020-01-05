@@ -90,7 +90,11 @@ func (r *Registry) Start() {
 
 	r.waitGroup.Add(1)
 	go func() {
-		r.ipTracker.track(r.GetDevices(), presence, r.stopping)
+		devices := make([]config.Device, 0)
+		for _, d := range r.devices {
+			devices = append(devices, d.Device)
+		}
+		r.ipTracker.track(devices, presence, r.stopping)
 		r.waitGroup.Done()
 	}()
 }

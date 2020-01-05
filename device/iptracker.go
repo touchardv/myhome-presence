@@ -7,26 +7,27 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/touchardv/myhome-presence/config"
 	"golang.org/x/net/icmp"
 	"golang.org/x/net/ipv4"
 )
 
 type ipTracker struct {
 	sequenceNumber int
-	devices        map[string]Device
+	devices        map[string]config.Device
 	socket         *icmp.PacketConn
 }
 
 func newIPTracker() ipTracker {
 	return ipTracker{
 		sequenceNumber: 0,
-		devices:        make(map[string]Device, 10),
+		devices:        make(map[string]config.Device, 10),
 	}
 }
 
 const data = "AreYouThere"
 
-func (t *ipTracker) init(devices []Device) error {
+func (t *ipTracker) init(devices []config.Device) error {
 	for _, device := range devices {
 		targetAddr := &net.UDPAddr{IP: net.ParseIP(device.Address)}
 		t.devices[targetAddr.String()] = device
@@ -74,7 +75,7 @@ func (t *ipTracker) waitForPingReplies(presence chan string) {
 	}()
 }
 
-func (t *ipTracker) ping(devices []Device) error {
+func (t *ipTracker) ping(devices []config.Device) error {
 	t.sequenceNumber++
 	request := icmp.Echo{ID: os.Getpid(), Seq: t.sequenceNumber, Data: []byte(data)}
 	message := icmp.Message{Type: ipv4.ICMPTypeEcho, Body: &request}
@@ -93,7 +94,7 @@ func (t *ipTracker) ping(devices []Device) error {
 	return nil
 }
 
-func (t *ipTracker) track(devices []Device, presence chan string, stopping chan struct{}) {
+func (t *ipTracker) track(devices []config.Device, presence chan string, stopping chan struct{}) {
 	err := t.init(devices)
 	if err != nil {
 		return

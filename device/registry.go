@@ -51,7 +51,16 @@ func (r *Registry) GetDevices() []Device {
 func (r *Registry) handle(presence chan string) {
 	log.Info("Starting: presence handler")
 	for {
+		check := time.NewTimer(1 * time.Minute)
 		select {
+		case <-check.C:
+			now := time.Now()
+			for _, d := range r.devices {
+				if d.Present && now.Sub(d.LastSeenAt).Minutes() > 5 {
+					log.Info("Device '", d.Description, "' is not present")
+					d.Present = false
+				}
+			}
 		case <-r.stopping:
 			log.Info("Stopped: presence handler")
 			return

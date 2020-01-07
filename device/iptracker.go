@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"net"
 	"os"
+	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -25,6 +26,8 @@ func newIPTracker() ipTracker {
 	}
 }
 
+const pingPacketCount = 20
+const pingPacketDelay = 200 * time.Millisecond
 const data = "AreYouThere"
 
 func (t *ipTracker) init(devices []config.Device) error {
@@ -43,10 +46,10 @@ func (t *ipTracker) init(devices []config.Device) error {
 	return nil
 }
 
-func (t *ipTracker) waitForPingReplies(presence chan string) {
+func (t *ipTracker) waitForPingReplies(duration time.Duration, presence chan string) {
 	go func() {
 		now := time.Now()
-		t.socket.SetReadDeadline(now.Add(15 * time.Second))
+		t.socket.SetReadDeadline(now.Add(duration))
 		incomingBytes := make([]byte, 32*1024)
 		for {
 			_, remoteAddr, err := t.socket.ReadFrom(incomingBytes)
@@ -81,14 +84,20 @@ func (t *ipTracker) ping(devices []config.Device) {
 	message := icmp.Message{Type: ipv4.ICMPTypeEcho, Body: &request}
 	outgoingBytes, err := message.Marshal(nil)
 
-	for _, device := range devices {
-		log.Debug("Sending ping to: ", device.Description)
-		targetIP := net.ParseIP(device.Address)
-		targetAddr := &net.UDPAddr{IP: targetIP}
-		_, err = t.socket.WriteTo(outgoingBytes, targetAddr)
-		if err != nil {
-			log.Warn("Ping failed: ", err)
+	for i := 1; i <= pingPacketCount; i++ {
+		log.Debug("Sending ping packet: ", i, "/", pingPacketCount)
+		for _, device := range devices {
+			targetIP := net.ParseIP(device.Address)
+			targetAddr := &net.UDPAddr{IP: targetIP}
+			_, err = t.socket.WriteTo(outgoingBytes, targetAddr)
+			if err != nil {
+				msg := err.Error()
+				if !strings.Contains(msg, "sendto: host is down") && !strings.Contains(msg, "no route to host") {
+					log.Warn("Ping failed: ", err)
+				}
+			}
 		}
+		time.Sleep(pingPacketDelay)
 	}
 }
 
@@ -100,13 +109,14 @@ func (t *ipTracker) track(devices []config.Device, presence chan string, stoppin
 	defer t.socket.Close()
 
 	log.Info("Starting: ip tracker")
+	ticker := time.NewTicker(1 * time.Minute)
 	for {
-		t.waitForPingReplies(presence)
+		t.waitForPingReplies(15*time.Second, presence)
 		t.ping(devices)
 
-		ticker := time.NewTicker(1 * time.Minute)
 		select {
 		case <-stopping:
+			ticker.Stop()
 			log.Info("Stopped: ip tracker")
 			return
 

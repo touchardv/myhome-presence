@@ -4,37 +4,35 @@ import (
 	"encoding/binary"
 	"net"
 	"os"
+	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/touchardv/myhome-presence/config"
 	"golang.org/x/net/icmp"
 	"golang.org/x/net/ipv4"
 )
 
-type notifier interface {
-	notify(device Device, present bool)
-}
-
 type ipTracker struct {
 	sequenceNumber int
-	devices        map[string]Device
+	devices        map[string]config.Device
+	doneReceiving  chan bool
 	socket         *icmp.PacketConn
-	stopping       chan bool
-	stopped        chan bool
 }
 
 func newIPTracker() ipTracker {
 	return ipTracker{
 		sequenceNumber: 0,
-		devices:        make(map[string]Device, 10),
-		stopping:       make(chan bool, 1),
-		stopped:        make(chan bool, 1),
+		doneReceiving:  make(chan bool),
+		devices:        make(map[string]config.Device, 10),
 	}
 }
 
+const pingPacketCount = 20
+const pingPacketDelay = 200 * time.Millisecond
 const data = "AreYouThere"
 
-func (t *ipTracker) init(devices []Device) error {
+func (t *ipTracker) init(devices []config.Device) error {
 	for _, device := range devices {
 		targetAddr := &net.UDPAddr{IP: net.ParseIP(device.Address)}
 		t.devices[targetAddr.String()] = device
@@ -50,20 +48,20 @@ func (t *ipTracker) init(devices []Device) error {
 	return nil
 }
 
-func (t *ipTracker) waitForPingReplies(n notifier) {
+func (t *ipTracker) receivePingReplies(duration time.Duration, presence chan string) {
 	go func() {
 		now := time.Now()
-		t.socket.SetReadDeadline(now.Add(15 * time.Second))
+		t.socket.SetReadDeadline(now.Add(duration))
 		incomingBytes := make([]byte, 32*1024)
 		for {
 			_, remoteAddr, err := t.socket.ReadFrom(incomingBytes)
 			if err != nil {
 				// check if it is a timeout error
 				if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
-					return
+					break
 				}
 				log.Error("Failed reading from socket: ", err)
-				return
+				break
 			}
 			if ipv4.ICMPType(incomingBytes[0]) != ipv4.ICMPTypeEchoReply {
 				continue
@@ -74,59 +72,63 @@ func (t *ipTracker) waitForPingReplies(n notifier) {
 				continue
 			}
 			if device, ok := t.devices[remoteAddr.String()]; ok {
-				n.notify(device, true)
+				presence <- device.Identifier
 			} else {
 				log.Warn("Ignoring ping reply from: ", remoteAddr.String())
 			}
 		}
+		t.doneReceiving <- true
+		log.Debug("Done receiving ping packets")
 	}()
 }
 
-func (t *ipTracker) ping(devices []Device) error {
+func (t *ipTracker) sendPingRequests() {
 	t.sequenceNumber++
 	request := icmp.Echo{ID: os.Getpid(), Seq: t.sequenceNumber, Data: []byte(data)}
 	message := icmp.Message{Type: ipv4.ICMPTypeEcho, Body: &request}
 	outgoingBytes, err := message.Marshal(nil)
 
-	for _, device := range devices {
-		log.Debug("Sending ping to: ", device.Description)
-		targetIP := net.ParseIP(device.Address)
-		targetAddr := &net.UDPAddr{IP: targetIP}
-		_, err = t.socket.WriteTo(outgoingBytes, targetAddr)
-		if err != nil {
-			log.Warn("Ping failed: ", err)
-			return err
-		}
-	}
-	return nil
-}
-
-func (t *ipTracker) stop() {
-	t.stopping <- true
-	<-t.stopped
-}
-
-func (t *ipTracker) track(devices []Device, n notifier) {
-	go func() {
-		err := t.init(devices)
-		if err != nil {
-			return
-		}
-		defer t.socket.Close()
-
-		for {
-			t.waitForPingReplies(n)
-			t.ping(devices)
-
-			ticker := time.NewTicker(1 * time.Minute)
-			select {
-			case <-t.stopping:
-				t.stopped <- true
-				return
-
-			case <-ticker.C:
-				break
+	for i := 1; i <= pingPacketCount; i++ {
+		log.Debug("Sending ping packet: ", i, "/", pingPacketCount)
+		for _, device := range t.devices {
+			targetIP := net.ParseIP(device.Address)
+			targetAddr := &net.UDPAddr{IP: targetIP}
+			_, err = t.socket.WriteTo(outgoingBytes, targetAddr)
+			if err != nil {
+				msg := err.Error()
+				if !strings.Contains(msg, "sendto: host is down") && !strings.Contains(msg, "no route to host") {
+					log.Warn("Ping failed: ", err)
+				}
 			}
 		}
-	}()
+		time.Sleep(pingPacketDelay)
+	}
+	log.Debug("Done sending ping packets")
+}
+
+func (t *ipTracker) track(devices []config.Device, presence chan string, stopping chan struct{}) {
+	log.Info("Starting: ip tracker")
+	ticker := time.NewTicker(1 * time.Minute)
+	for {
+		err := t.init(devices)
+		if err != nil {
+			log.Error("Init failed: ", err)
+			time.Sleep(5 * time.Second)
+			continue
+		}
+		t.receivePingReplies(15*time.Second, presence)
+		t.sendPingRequests()
+		<-t.doneReceiving
+		t.socket.Close()
+
+		select {
+		case <-stopping:
+			ticker.Stop()
+			log.Info("Stopped: ip tracker")
+			return
+
+		case <-ticker.C:
+			break
+		}
+	}
 }

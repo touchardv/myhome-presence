@@ -16,12 +16,14 @@ import (
 type ipTracker struct {
 	sequenceNumber int
 	devices        map[string]config.Device
+	doneReceiving  chan bool
 	socket         *icmp.PacketConn
 }
 
 func newIPTracker() ipTracker {
 	return ipTracker{
 		sequenceNumber: 0,
+		doneReceiving:  make(chan bool),
 		devices:        make(map[string]config.Device, 10),
 	}
 }
@@ -46,7 +48,7 @@ func (t *ipTracker) init(devices []config.Device) error {
 	return nil
 }
 
-func (t *ipTracker) waitForPingReplies(duration time.Duration, presence chan string) {
+func (t *ipTracker) receivePingReplies(duration time.Duration, presence chan string) {
 	go func() {
 		now := time.Now()
 		t.socket.SetReadDeadline(now.Add(duration))
@@ -56,10 +58,10 @@ func (t *ipTracker) waitForPingReplies(duration time.Duration, presence chan str
 			if err != nil {
 				// check if it is a timeout error
 				if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
-					return
+					break
 				}
 				log.Error("Failed reading from socket: ", err)
-				return
+				break
 			}
 			if ipv4.ICMPType(incomingBytes[0]) != ipv4.ICMPTypeEchoReply {
 				continue
@@ -75,10 +77,12 @@ func (t *ipTracker) waitForPingReplies(duration time.Duration, presence chan str
 				log.Warn("Ignoring ping reply from: ", remoteAddr.String())
 			}
 		}
+		t.doneReceiving <- true
+		log.Debug("Done receiving ping packets")
 	}()
 }
 
-func (t *ipTracker) ping(devices []config.Device) {
+func (t *ipTracker) sendPingRequests() {
 	t.sequenceNumber++
 	request := icmp.Echo{ID: os.Getpid(), Seq: t.sequenceNumber, Data: []byte(data)}
 	message := icmp.Message{Type: ipv4.ICMPTypeEcho, Body: &request}
@@ -86,7 +90,7 @@ func (t *ipTracker) ping(devices []config.Device) {
 
 	for i := 1; i <= pingPacketCount; i++ {
 		log.Debug("Sending ping packet: ", i, "/", pingPacketCount)
-		for _, device := range devices {
+		for _, device := range t.devices {
 			targetIP := net.ParseIP(device.Address)
 			targetAddr := &net.UDPAddr{IP: targetIP}
 			_, err = t.socket.WriteTo(outgoingBytes, targetAddr)
@@ -99,20 +103,23 @@ func (t *ipTracker) ping(devices []config.Device) {
 		}
 		time.Sleep(pingPacketDelay)
 	}
+	log.Debug("Done sending ping packets")
 }
 
 func (t *ipTracker) track(devices []config.Device, presence chan string, stopping chan struct{}) {
-	err := t.init(devices)
-	if err != nil {
-		return
-	}
-	defer t.socket.Close()
-
 	log.Info("Starting: ip tracker")
 	ticker := time.NewTicker(1 * time.Minute)
 	for {
-		t.waitForPingReplies(15*time.Second, presence)
-		t.ping(devices)
+		err := t.init(devices)
+		if err != nil {
+			log.Error("Init failed: ", err)
+			time.Sleep(5 * time.Second)
+			continue
+		}
+		t.receivePingReplies(15*time.Second, presence)
+		t.sendPingRequests()
+		<-t.doneReceiving
+		t.socket.Close()
 
 		select {
 		case <-stopping:

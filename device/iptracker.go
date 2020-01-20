@@ -96,7 +96,7 @@ func (t *ipTracker) sendPingRequests() {
 			_, err = t.socket.WriteTo(outgoingBytes, targetAddr)
 			if err != nil {
 				msg := err.Error()
-				if !strings.Contains(msg, "sendto: host is down") && !strings.Contains(msg, "no route to host") {
+				if !strings.Contains(msg, "sendto: host is down") && !strings.Contains(msg, "no route to host") && !strings.Contains(msg, "sendto: network is unreachable") {
 					log.Warn("Ping failed: ", err)
 				}
 			}

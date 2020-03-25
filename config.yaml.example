@@ -3,3 +3,7 @@ ip_devices:
 - description: My laptop
   address: 10.10.10.123
   identifier: AB:CD:EF:01:02:02
+mqtt_server:
+  hostname: 192.10.20.1
+  port: 1883
+  topic: foo/bar

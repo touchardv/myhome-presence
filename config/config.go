@@ -16,10 +16,18 @@ type Device struct {
 	Identifier  string
 }
 
+// MQTT contains the MQTT server connection information.
+type MQTT struct {
+	Hostname string
+	Port     uint
+	Topic    string
+}
+
 // Config contains the list of all devices to be tracked.
 type Config struct {
 	BluetoothDevices []Device `yaml:"bluetooth_devices"`
 	IPDevices        []Device `yaml:"ip_devices"`
+	MQTTServer       MQTT     `yaml:"mqtt_server"`
 }
 
 // DefaultLocation corresponds to the default path to the directory where

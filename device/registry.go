@@ -4,8 +4,8 @@ import (
 	"sync"
 	"time"
 
+	MQTT "github.com/eclipse/paho.mqtt.golang"
 	log "github.com/sirupsen/logrus"
-
 	"github.com/touchardv/myhome-presence/config"
 )
 
@@ -19,10 +19,12 @@ type Device struct {
 // Registry maintains the status of all tracked devices
 // together with their presence status.
 type Registry struct {
-	devices   map[string]*Device
-	ipTracker ipTracker
-	stopping  chan struct{}
-	waitGroup sync.WaitGroup
+	devices    map[string]*Device
+	ipTracker  ipTracker
+	mqttClient MQTT.Client
+	mqttTopic  string
+	stopping   chan struct{}
+	waitGroup  sync.WaitGroup
 }
 
 // NewRegistry builds a new device registry.
@@ -33,9 +35,11 @@ func NewRegistry(config config.Config) *Registry {
 		devices[device.Identifier] = &device
 	}
 	return &Registry{
-		devices:   devices,
-		ipTracker: newIPTracker(),
-		stopping:  make(chan struct{}),
+		devices:    devices,
+		ipTracker:  newIPTracker(),
+		mqttClient: newMQTTClient(config.MQTTServer),
+		mqttTopic:  config.MQTTServer.Topic,
+		stopping:   make(chan struct{}),
 	}
 }
 
@@ -59,6 +63,7 @@ func (r *Registry) handle(presence chan string) {
 				if d.Present && now.Sub(d.LastSeenAt).Minutes() > 5 {
 					log.Info("Device '", d.Description, "' is not present")
 					d.Present = false
+					r.publishPresence(d)
 				}
 			}
 			check.Reset(1 * time.Minute)
@@ -72,6 +77,7 @@ func (r *Registry) handle(presence chan string) {
 					d.Present = true
 				}
 				d.LastSeenAt = time.Now()
+				r.publishPresence(d)
 			} else {
 				log.Warn("Unknown device: ", identifier)
 			}
@@ -82,6 +88,7 @@ func (r *Registry) handle(presence chan string) {
 // Start activates the tracking of devices.
 func (r *Registry) Start() {
 	log.Info("Starting: registry")
+	r.connect()
 	presence := make(chan string, 10)
 	r.waitGroup.Add(1)
 	go func() {
@@ -103,6 +110,7 @@ func (r *Registry) Start() {
 // Stop de-activates the tracking of devices.
 func (r *Registry) Stop() {
 	log.Info("Stopping: registry")
+	r.disconnect()
 	close(r.stopping)
 	r.waitGroup.Wait()
 	log.Info("Stopped: registry")

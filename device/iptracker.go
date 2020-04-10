@@ -20,8 +20,8 @@ type ipTracker struct {
 	socket         *icmp.PacketConn
 }
 
-func newIPTracker() ipTracker {
-	return ipTracker{
+func newIPTracker() Tracker {
+	return &ipTracker{
 		sequenceNumber: 0,
 		doneReceiving:  make(chan bool),
 		devices:        make(map[string]config.Device, 10),
@@ -106,7 +106,7 @@ func (t *ipTracker) sendPingRequests() {
 	log.Debug("Done sending ping packets")
 }
 
-func (t *ipTracker) track(devices []config.Device, presence chan string, stopping chan struct{}) {
+func (t *ipTracker) Track(devices []config.Device, presence chan string, stopping chan struct{}) {
 	log.Info("Starting: ip tracker")
 	ticker := time.NewTicker(1 * time.Minute)
 	for {

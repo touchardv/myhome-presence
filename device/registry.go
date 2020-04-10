@@ -119,8 +119,8 @@ func (r *Registry) Start() {
 // Stop de-activates the tracking of devices.
 func (r *Registry) Stop() {
 	log.Info("Stopping: registry")
-	r.disconnect()
 	close(r.stopping)
 	r.waitGroup.Wait()
+	r.disconnect()
 	log.Info("Stopped: registry")
 }

@@ -8,6 +8,7 @@ import (
 
 type bleTracker struct {
 	device   gatt.Device
+	devices  map[string]config.Device
 	scanning bool
 }
 
@@ -16,7 +17,22 @@ func newBLETracker() Tracker {
 	if err != nil {
 		log.Fatal("Failed to create BLE device: ", err)
 	}
-	return &bleTracker{device: d, scanning: false}
+	return &bleTracker{
+		device:   d,
+		devices:  make(map[string]config.Device, 10),
+		scanning: false,
+	}
+}
+
+func (t *bleTracker) init(devices []config.Device, f func(p gatt.Peripheral, a *gatt.Advertisement, rssi int)) error {
+	for _, device := range devices {
+		if len(device.BLEAddress) == 0 {
+			continue
+		}
+		t.devices[device.BLEAddress] = device
+	}
+	t.device.Handle(gatt.PeripheralDiscovered(f))
+	return t.device.Init(t.onDeviceStateChanged)
 }
 
 func (t *bleTracker) onDeviceStateChanged(d gatt.Device, s gatt.State) {
@@ -26,14 +42,16 @@ func (t *bleTracker) onDeviceStateChanged(d gatt.Device, s gatt.State) {
 		t.scanning = true
 	}
 }
-func (t *bleTracker) onPeripheralDiscovered(p gatt.Peripheral, a *gatt.Advertisement, rssi int) {
-	log.Debugf("Discovered %s %s %s", p.ID(), p.Name(), a.LocalName)
-}
 
 func (t *bleTracker) Track(devices []config.Device, presence chan string, stopping chan struct{}) {
 	log.Info("Starting: ble tracker")
-	t.device.Handle(gatt.PeripheralDiscovered(t.onPeripheralDiscovered))
-	err := t.device.Init(t.onDeviceStateChanged)
+	err := t.init(devices, func(p gatt.Peripheral, a *gatt.Advertisement, rssi int) {
+		log.Debugf("Discovered %s %s %s", p.ID(), p.Name(), a.LocalName)
+		d, ok := t.devices[p.ID()]
+		if ok {
+			presence <- d.Identifier
+		}
+	})
 	if err != nil {
 		log.Error("Failed to init BLE device: ", err)
 	}

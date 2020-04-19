@@ -1,8 +1,16 @@
-bluetooth_devices: []
-ip_devices:
+devices:
 - description: My laptop
-  address: 10.10.10.123
-  identifier: AB:CD:EF:01:02:02
+  identifier: my-laptop
+  ip_address: 10.10.10.123
+  mac_address: AB:CD:EF:01:02:02
+- description: My smartwatch
+  identifier: my-smartwatch
+  ble_address: 9d329f8ba3c24ae0a494b195dda27d41
+- description: My phone
+  identifier: my-phone
+  ip_address: 10.10.10.124
+  mac_address: AB:CD:EF:01:02:03
+  ble_address: 9d329f8ba3c24ae0a494b195dda27d42
 mqtt_server:
   hostname: 192.10.20.1
   port: 1883

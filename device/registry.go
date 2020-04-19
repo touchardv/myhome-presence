@@ -35,7 +35,7 @@ type Tracker interface {
 // NewRegistry builds a new device registry.
 func NewRegistry(config config.Config) *Registry {
 	devices := make(map[string]*Device, 0)
-	for _, d := range config.IPDevices {
+	for _, d := range config.Devices {
 		device := Device{Device: d, Present: false}
 		devices[device.Identifier] = &device
 	}

@@ -9,12 +9,12 @@ import (
 
 var device = config.Device{
 	Description: "dummy",
-	Address:     "1.2.3.4",
+	IPAddress:   "1.2.3.4",
 	Identifier:  "foo",
 }
 
 var cfg = config.Config{
-	IPDevices: []config.Device{device},
+	Devices: []config.Device{device},
 }
 
 func TestGetDevices(t *testing.T) {

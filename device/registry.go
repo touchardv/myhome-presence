@@ -42,6 +42,7 @@ func NewRegistry(config config.Config) *Registry {
 	return &Registry{
 		devices: devices,
 		trackers: []Tracker{
+			newIPTracker(),
 			newBLETracker(),
 		},
 		mqttClient: newMQTTClient(config.MQTTServer),

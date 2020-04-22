@@ -20,23 +20,30 @@ type Device struct {
 // together with their presence status.
 type Registry struct {
 	devices    map[string]*Device
-	ipTracker  ipTracker
+	trackers   []Tracker
 	mqttClient MQTT.Client
 	mqttTopic  string
 	stopping   chan struct{}
 	waitGroup  sync.WaitGroup
 }
 
+// Tracker tracks the presence of devices.
+type Tracker interface {
+	Track(devices []config.Device, presence chan string, stopping chan struct{})
+}
+
 // NewRegistry builds a new device registry.
 func NewRegistry(config config.Config) *Registry {
 	devices := make(map[string]*Device, 0)
-	for _, d := range config.IPDevices {
+	for _, d := range config.Devices {
 		device := Device{Device: d, Present: false}
 		devices[device.Identifier] = &device
 	}
 	return &Registry{
-		devices:    devices,
-		ipTracker:  newIPTracker(),
+		devices: devices,
+		trackers: []Tracker{
+			newBLETracker(),
+		},
 		mqttClient: newMQTTClient(config.MQTTServer),
 		mqttTopic:  config.MQTTServer.Topic,
 		stopping:   make(chan struct{}),
@@ -96,22 +103,24 @@ func (r *Registry) Start() {
 		r.waitGroup.Done()
 	}()
 
-	r.waitGroup.Add(1)
-	go func() {
-		devices := make([]config.Device, 0)
-		for _, d := range r.devices {
-			devices = append(devices, d.Device)
-		}
-		r.ipTracker.track(devices, presence, r.stopping)
-		r.waitGroup.Done()
-	}()
+	devices := make([]config.Device, 0)
+	for _, d := range r.devices {
+		devices = append(devices, d.Device)
+	}
+	for _, t := range r.trackers {
+		r.waitGroup.Add(1)
+		go func(t Tracker) {
+			t.Track(devices, presence, r.stopping)
+			r.waitGroup.Done()
+		}(t)
+	}
 }
 
 // Stop de-activates the tracking of devices.
 func (r *Registry) Stop() {
 	log.Info("Stopping: registry")
-	r.disconnect()
 	close(r.stopping)
 	r.waitGroup.Wait()
+	r.disconnect()
 	log.Info("Stopped: registry")
 }

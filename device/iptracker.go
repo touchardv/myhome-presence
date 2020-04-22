@@ -20,8 +20,8 @@ type ipTracker struct {
 	socket         *icmp.PacketConn
 }
 
-func newIPTracker() ipTracker {
-	return ipTracker{
+func newIPTracker() Tracker {
+	return &ipTracker{
 		sequenceNumber: 0,
 		doneReceiving:  make(chan bool),
 		devices:        make(map[string]config.Device, 10),
@@ -34,7 +34,10 @@ const data = "AreYouThere"
 
 func (t *ipTracker) init(devices []config.Device) error {
 	for _, device := range devices {
-		targetAddr := &net.UDPAddr{IP: net.ParseIP(device.Address)}
+		if len(device.IPAddress) == 0 {
+			continue
+		}
+		targetAddr := &net.UDPAddr{IP: net.ParseIP(device.IPAddress)}
 		t.devices[targetAddr.String()] = device
 	}
 
@@ -91,7 +94,7 @@ func (t *ipTracker) sendPingRequests() {
 	for i := 1; i <= pingPacketCount; i++ {
 		log.Debug("Sending ping packet: ", i, "/", pingPacketCount)
 		for _, device := range t.devices {
-			targetIP := net.ParseIP(device.Address)
+			targetIP := net.ParseIP(device.IPAddress)
 			targetAddr := &net.UDPAddr{IP: targetIP}
 			_, err = t.socket.WriteTo(outgoingBytes, targetAddr)
 			if err != nil {
@@ -106,7 +109,7 @@ func (t *ipTracker) sendPingRequests() {
 	log.Debug("Done sending ping packets")
 }
 
-func (t *ipTracker) track(devices []config.Device, presence chan string, stopping chan struct{}) {
+func (t *ipTracker) Track(devices []config.Device, presence chan string, stopping chan struct{}) {
 	log.Info("Starting: ip tracker")
 	ticker := time.NewTicker(1 * time.Minute)
 	for {

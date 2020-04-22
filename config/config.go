@@ -12,8 +12,10 @@ import (
 // Device represents a single device being tracked.
 type Device struct {
 	Description string
-	Address     string
 	Identifier  string
+	BLEAddress  string `yaml:"ble_address"`
+	IPAddress   string `yaml:"ip_address"`
+	MACAddress  string `yaml:"mac_address"`
 }
 
 // MQTT contains the MQTT server connection information.
@@ -25,9 +27,8 @@ type MQTT struct {
 
 // Config contains the list of all devices to be tracked.
 type Config struct {
-	BluetoothDevices []Device `yaml:"bluetooth_devices"`
-	IPDevices        []Device `yaml:"ip_devices"`
-	MQTTServer       MQTT     `yaml:"mqtt_server"`
+	Devices    []Device `yaml:"devices"`
+	MQTTServer MQTT     `yaml:"mqtt_server"`
 }
 
 // DefaultLocation corresponds to the default path to the directory where

@@ -34,11 +34,13 @@ const data = "AreYouThere"
 
 func (t *ipTracker) init(devices []config.Device) error {
 	for _, device := range devices {
-		if len(device.IPAddress) == 0 {
+		if len(device.IPInterfaces) == 0 {
 			continue
 		}
-		targetAddr := &net.UDPAddr{IP: net.ParseIP(device.IPAddress)}
-		t.devices[targetAddr.String()] = device
+		for _, i := range device.IPInterfaces {
+			targetAddr := &net.UDPAddr{IP: net.ParseIP(i.IPAddress)}
+			t.devices[targetAddr.String()] = device
+		}
 	}
 
 	sourceIP := net.ParseIP("0.0.0.0")
@@ -94,13 +96,15 @@ func (t *ipTracker) sendPingRequests() {
 	for i := 1; i <= pingPacketCount; i++ {
 		log.Debug("Sending ping packet: ", i, "/", pingPacketCount)
 		for _, device := range t.devices {
-			targetIP := net.ParseIP(device.IPAddress)
-			targetAddr := &net.UDPAddr{IP: targetIP}
-			_, err = t.socket.WriteTo(outgoingBytes, targetAddr)
-			if err != nil {
-				msg := err.Error()
-				if !strings.Contains(msg, "sendto: host is down") && !strings.Contains(msg, "no route to host") && !strings.Contains(msg, "sendto: network is unreachable") {
-					log.Warn("Ping failed: ", err)
+			for _, i := range device.IPInterfaces {
+				targetIP := net.ParseIP(i.IPAddress)
+				targetAddr := &net.UDPAddr{IP: targetIP}
+				_, err = t.socket.WriteTo(outgoingBytes, targetAddr)
+				if err != nil {
+					msg := err.Error()
+					if !strings.Contains(msg, "sendto: host is down") && !strings.Contains(msg, "no route to host") && !strings.Contains(msg, "sendto: network is unreachable") {
+						log.Warn("Ping failed: ", err)
+					}
 				}
 			}
 		}

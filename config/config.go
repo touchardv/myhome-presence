@@ -9,13 +9,18 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// IPInterface represents one IP device interface.
+type IPInterface struct {
+	IPAddress  string `yaml:"ip_address"`
+	MACAddress string `yaml:"mac_address"`
+}
+
 // Device represents a single device being tracked.
 type Device struct {
-	Description string
-	Identifier  string
-	BLEAddress  string `yaml:"ble_address"`
-	IPAddress   string `yaml:"ip_address"`
-	MACAddress  string `yaml:"mac_address"`
+	Description  string
+	Identifier   string
+	BLEAddress   string                 `yaml:"ble_address"`
+	IPInterfaces map[string]IPInterface `yaml:"ip_interfaces"`
 }
 
 // MQTT contains the MQTT server connection information.
@@ -39,8 +44,12 @@ const defaultFilename = "config.yaml"
 
 // Retrieve reads and parses the configuration file.
 func Retrieve(location string) Config {
+	return retrieve(location, defaultFilename)
+}
+
+func retrieve(location string, name string) Config {
 	config := Config{}
-	filename := filepath.Join(location, defaultFilename)
+	filename := filepath.Join(location, name)
 	content, err := ioutil.ReadFile(filename)
 	if err == nil {
 		err = yaml.Unmarshal(content, &config)

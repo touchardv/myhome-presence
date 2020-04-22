@@ -9,8 +9,12 @@ import (
 
 var device = config.Device{
 	Description: "dummy",
-	IPAddress:   "1.2.3.4",
-	Identifier:  "foo",
+	IPInterfaces: map[string]config.IPInterface{
+		"ethernet": {
+			IPAddress: "1.2.3.4",
+		},
+	},
+	Identifier: "foo",
 }
 
 var cfg = config.Config{

@@ -34,7 +34,7 @@ func (t *bleTracker) init(devices []config.Device, presence chan string) {
 }
 
 func (t *bleTracker) onDeviceStateChanged(d gatt.Device, s gatt.State) {
-	log.Debug("BLE device state: ", s)
+	log.Debug("Local Bluetooth device state changed: ", s)
 	if s == gatt.StatePoweredOn {
 		if !t.scanning {
 			d.Scan([]gatt.UUID{}, true)
@@ -44,7 +44,7 @@ func (t *bleTracker) onDeviceStateChanged(d gatt.Device, s gatt.State) {
 }
 
 func (t *bleTracker) onPeripheralDiscovered(p gatt.Peripheral, a *gatt.Advertisement, rssi int) {
-	log.Debugf("Discovered %s %s %s", p.ID(), p.Name(), a.LocalName)
+	log.Debugf("Discovered a Bluetooth device: %s %s %s", p.ID(), p.Name(), a.LocalName)
 	d, ok := t.devices[p.ID()]
 	if ok {
 		t.presence <- d.Identifier
@@ -52,14 +52,14 @@ func (t *bleTracker) onPeripheralDiscovered(p gatt.Peripheral, a *gatt.Advertise
 }
 
 func (t *bleTracker) startScanning() {
-	log.Debug("Start BLE device scanning...")
+	log.Debug("Start scanning for Bluetooth devices...")
 	d, err := gatt.NewDevice(defaultClientOptions...)
 	if err != nil {
-		log.Fatal("Failed to create BLE device: ", err)
+		log.Fatal("Failed to create the local Bluetooth device: ", err)
 		return
 	}
 	if err := d.Init(t.onDeviceStateChanged); err != nil {
-		log.Error("Failed to init BLE device: ", err)
+		log.Error("Failed to initialise the local Bluetooth device: ", err)
 		return
 	}
 	t.device = d
@@ -67,20 +67,20 @@ func (t *bleTracker) startScanning() {
 }
 
 func (t *bleTracker) stopScanning() {
-	log.Debug("Stop BLE device scanning...")
+	log.Debug("Stop scanning for Bluetooth devices...")
 	if t.scanning == true {
 		t.device.StopScanning()
 		t.scanning = false
 	}
 	err := t.device.Stop()
 	if err != nil {
-		log.Error("Failed to stop device: ", err)
+		log.Error("Failed to stop the local Bluetooth device: ", err)
 	}
 	t.device = nil
 }
 
 func (t *bleTracker) Track(devices []config.Device, presence chan string, stopping chan struct{}) {
-	log.Info("Starting: ble tracker")
+	log.Info("Starting: Bluetooth tracker")
 	t.init(devices, presence)
 	t.startScanning()
 	timer := time.NewTimer(30 * time.Second)
@@ -98,7 +98,7 @@ func (t *bleTracker) Track(devices []config.Device, presence chan string, stoppi
 			if t.scanning {
 				t.stopScanning()
 			}
-			log.Info("Stopped: ble tracker")
+			log.Info("Stopped: Bluetooth tracker")
 			return
 		}
 	}

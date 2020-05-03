@@ -1,4 +1,4 @@
-package device
+package bluetooth
 
 import (
 	"math/rand"
@@ -7,7 +7,13 @@ import (
 	"github.com/bettercap/gatt"
 	log "github.com/sirupsen/logrus"
 	"github.com/touchardv/myhome-presence/config"
+	"github.com/touchardv/myhome-presence/device"
 )
+
+// EnableTracker registers the "bluetooth" tracker so that it can be used.
+func EnableTracker() {
+	device.Register("bluetooth", newBLETracker)
+}
 
 type bleTracker struct {
 	device   gatt.Device
@@ -16,7 +22,7 @@ type bleTracker struct {
 	presence chan string
 }
 
-func newBLETracker() Tracker {
+func newBLETracker() device.Tracker {
 	return &bleTracker{
 		devices:  make(map[string]config.Device, 10),
 		scanning: false,

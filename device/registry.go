@@ -27,11 +27,6 @@ type Registry struct {
 	waitGroup  sync.WaitGroup
 }
 
-// Tracker tracks the presence of devices.
-type Tracker interface {
-	Track(devices []config.Device, presence chan string, stopping chan struct{})
-}
-
 // NewRegistry builds a new device registry.
 func NewRegistry(config config.Config) *Registry {
 	devices := make(map[string]*Device, 0)
@@ -42,8 +37,8 @@ func NewRegistry(config config.Config) *Registry {
 	return &Registry{
 		devices: devices,
 		trackers: []Tracker{
-			newIPTracker(),
-			newBLETracker(),
+			newTracker("bluetooth"),
+			newTracker("ipv4"),
 		},
 		mqttClient: newMQTTClient(config.MQTTServer),
 		mqttTopic:  config.MQTTServer.Topic,

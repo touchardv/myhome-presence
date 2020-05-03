@@ -5,12 +5,13 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/spf13/pflag"
-	"github.com/touchardv/myhome-presence/config"
-
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/pflag"
 	"github.com/touchardv/myhome-presence/api"
+	"github.com/touchardv/myhome-presence/bluetooth"
+	"github.com/touchardv/myhome-presence/config"
 	"github.com/touchardv/myhome-presence/device"
+	"github.com/touchardv/myhome-presence/ipv4"
 )
 
 func main() {
@@ -24,6 +25,8 @@ func main() {
 
 	log.Info("Starting...")
 	config := config.Retrieve(*configLocation)
+	bluetooth.EnableTracker()
+	ipv4.EnableTracker()
 	registry := device.NewRegistry(config)
 	server := api.NewServer(registry)
 	registry.Start()

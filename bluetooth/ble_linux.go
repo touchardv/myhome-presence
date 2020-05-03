@@ -1,4 +1,4 @@
-package device
+package package bluetooth
 
 import "github.com/bettercap/gatt"
 

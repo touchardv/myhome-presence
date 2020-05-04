@@ -49,6 +49,8 @@ func (t *btTracker) Track(devices []config.Device, presence chan string, stoppin
 		case <-timer.C:
 			if t.scanning {
 				t.stopScanning()
+				// Wait a little before doing the ping
+				time.Sleep(2 * time.Second)
 				t.ping()
 			} else {
 				t.startScanning()

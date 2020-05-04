@@ -132,6 +132,7 @@ func respondToPing(svr string) bool {
 			// Check type
 			switch receiveBuff[0] {
 			case l2CAPEchoResponse:
+				log.Debugf("%d bytes from %s id %d\n", n, svr, id)
 				return true
 			case l2CAPCommandRejectResponse:
 				log.Debug("Peer doesn't support Echo packets")

@@ -49,9 +49,8 @@ func (t *btTracker) Track(devices []config.Device, presence chan string, stoppin
 		case <-timer.C:
 			if t.scanning {
 				t.stopScanning()
-				t.startPinging()
+				t.ping()
 			} else {
-				t.stopPinging()
 				t.startScanning()
 			}
 			timer.Reset(randomDuration(t.scanning))

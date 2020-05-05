@@ -21,6 +21,21 @@ var cfg = config.Config{
 	Devices: []config.Device{device},
 }
 
+type dummyTracker struct{}
+
+func newDummyTracker() Tracker {
+	return &dummyTracker{}
+}
+
+func (t *dummyTracker) Track(devices []config.Device, presence chan string, stopping chan struct{}) {
+	// noop
+}
+
+func init() {
+	Register("bluetooth", newDummyTracker)
+	Register("ipv4", newDummyTracker)
+}
+
 func TestGetDevices(t *testing.T) {
 	registry := NewRegistry(cfg)
 	devices := registry.GetDevices()

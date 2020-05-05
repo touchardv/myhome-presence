@@ -19,7 +19,7 @@ devices:
     wifi:
       ip_address: 10.10.10.124
       mac_address: AB:CD:EF:01:02:03
-  ble_address: 9d329f8ba3c24ae0a494b195dda27d42
+  bt_address: AA:BB:CC:DD:EE
 
 mqtt_server:
   hostname: 192.10.20.1

@@ -20,6 +20,7 @@ type Device struct {
 	Description  string
 	Identifier   string
 	BLEAddress   string                 `yaml:"ble_address"`
+	BTAddress    string                 `yaml:"bt_address"`
 	IPInterfaces map[string]IPInterface `yaml:"ip_interfaces"`
 }
 

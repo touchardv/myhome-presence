@@ -18,8 +18,10 @@ $(BUILD_DIR)/$(BINARY)-linux-arm: $(SOURCES)
 clean:
 	rm -rf $(BUILD_DIR)
 
-deploy: test $(BUILD_DIR)/$(BINARY)-linux-arm
+copy: $(BUILD_DIR)/$(BINARY)-linux-arm
 	scp $(BUILD_DIR)/$(BINARY)-linux-arm $(TARGET):/tmp/$(BINARY)-linux-arm
+
+deploy: test copy
 	ssh $(TARGET) sudo systemctl stop myhome-presence
 	ssh $(TARGET) sudo cp /tmp/$(BINARY)-linux-arm /usr/bin/myhome-presence
 	ssh $(TARGET) sudo setcap 'cap_net_raw,cap_net_admin=eip' /usr/bin/myhome-presence

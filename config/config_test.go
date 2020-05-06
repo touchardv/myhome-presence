@@ -23,4 +23,8 @@ func TestRetrieving(t *testing.T) {
 	device = cfg.Devices[2]
 	assert.Equal(t, "My phone", device.Description)
 	assert.Equal(t, "AA:BB:CC:DD:EE", device.BTAddress)
+
+	assert.Equal(t, 2, len(cfg.Trackers))
+	assert.Equal(t, "ipv4", cfg.Trackers[0])
+	assert.Equal(t, "bluetooth", cfg.Trackers[1])
 }

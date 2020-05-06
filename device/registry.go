@@ -34,12 +34,13 @@ func NewRegistry(config config.Config) *Registry {
 		device := Device{Device: d, Present: false}
 		devices[device.Identifier] = &device
 	}
+	trackers := make([]Tracker, 0)
+	for _, name := range config.Trackers {
+		trackers = append(trackers, newTracker(name))
+	}
 	return &Registry{
-		devices: devices,
-		trackers: []Tracker{
-			newTracker("bluetooth"),
-			newTracker("ipv4"),
-		},
+		devices:    devices,
+		trackers:   trackers,
 		mqttClient: newMQTTClient(config.MQTTServer),
 		mqttTopic:  config.MQTTServer.Topic,
 		stopping:   make(chan struct{}),

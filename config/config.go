@@ -35,6 +35,7 @@ type MQTT struct {
 type Config struct {
 	Devices    []Device `yaml:"devices"`
 	MQTTServer MQTT     `yaml:"mqtt_server"`
+	Trackers   []string `yaml:"trackers"`
 }
 
 // DefaultLocation corresponds to the default path to the directory where

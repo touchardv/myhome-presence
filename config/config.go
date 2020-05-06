@@ -15,15 +15,6 @@ type IPInterface struct {
 	MACAddress string `yaml:"mac_address"`
 }
 
-// Device represents a single device being tracked.
-type Device struct {
-	Description  string
-	Identifier   string
-	BLEAddress   string                 `yaml:"ble_address"`
-	BTAddress    string                 `yaml:"bt_address"`
-	IPInterfaces map[string]IPInterface `yaml:"ip_interfaces"`
-}
-
 // MQTT contains the MQTT server connection information.
 type MQTT struct {
 	Hostname string

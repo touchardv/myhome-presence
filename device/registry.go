@@ -9,17 +9,10 @@ import (
 	"github.com/touchardv/myhome-presence/config"
 )
 
-// Device represents a tracked device and its presence status.
-type Device struct {
-	config.Device
-	Present    bool
-	LastSeenAt time.Time
-}
-
 // Registry maintains the status of all tracked devices
 // together with their presence status.
 type Registry struct {
-	devices    map[string]*Device
+	devices    map[string]*config.Device
 	trackers   []Tracker
 	mqttClient MQTT.Client
 	mqttTopic  string
@@ -28,28 +21,29 @@ type Registry struct {
 }
 
 // NewRegistry builds a new device registry.
-func NewRegistry(config config.Config) *Registry {
-	devices := make(map[string]*Device, 0)
-	for _, d := range config.Devices {
-		device := Device{Device: d, Present: false}
+func NewRegistry(cfg config.Config) *Registry {
+	devices := make(map[string]*config.Device, 0)
+	for _, d := range cfg.Devices {
+		device := config.Device{}
+		device = d
 		devices[device.Identifier] = &device
 	}
 	trackers := make([]Tracker, 0)
-	for _, name := range config.Trackers {
+	for _, name := range cfg.Trackers {
 		trackers = append(trackers, newTracker(name))
 	}
 	return &Registry{
 		devices:    devices,
 		trackers:   trackers,
-		mqttClient: newMQTTClient(config.MQTTServer),
-		mqttTopic:  config.MQTTServer.Topic,
+		mqttClient: newMQTTClient(cfg.MQTTServer),
+		mqttTopic:  cfg.MQTTServer.Topic,
 		stopping:   make(chan struct{}),
 	}
 }
 
 // GetDevices returns all tracked devices.
-func (r *Registry) GetDevices() []Device {
-	devices := make([]Device, 0)
+func (r *Registry) GetDevices() []config.Device {
+	devices := make([]config.Device, 0)
 	for _, d := range r.devices {
 		devices = append(devices, *d)
 	}
@@ -102,7 +96,7 @@ func (r *Registry) Start() {
 
 	devices := make([]config.Device, 0)
 	for _, d := range r.devices {
-		devices = append(devices, d.Device)
+		devices = append(devices, *d)
 	}
 	for _, t := range r.trackers {
 		r.waitGroup.Add(1)

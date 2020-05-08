@@ -1,5 +1,13 @@
 package config
 
+import (
+	"io/ioutil"
+	"path/filepath"
+	"time"
+
+	"gopkg.in/yaml.v2"
+)
+
 // Status represents the various states a device can be in.
 type Status int
 
@@ -34,4 +42,14 @@ type Device struct {
 	BTAddress    string                 `yaml:"bt_address"`
 	IPInterfaces map[string]IPInterface `yaml:"ip_interfaces"`
 	Status       Status                 `yaml:"status"`
+	Present      bool                   `yaml:"present"`
+	LastSeenAt   time.Time              `yaml:"last_seen_at"`
+}
+
+func save(devices []Device, location string) error {
+	bytes, err := yaml.Marshal(devices)
+	if err == nil {
+		err = ioutil.WriteFile(filepath.Join(location, "devices.yaml"), bytes, 0644)
+	}
+	return err
 }

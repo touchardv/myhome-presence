@@ -39,7 +39,7 @@ func (r *Registry) disconnect() {
 	}
 }
 
-func (r *Registry) publishPresence(d *Device) {
+func (r *Registry) publishPresence(d *config.Device) {
 	bytes, err := json.Marshal(d)
 	if err == nil {
 		r.mqttClient.Publish(r.mqttTopic, 0, false, bytes)

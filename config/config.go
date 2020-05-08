@@ -27,6 +27,7 @@ type Config struct {
 	Devices    []Device `yaml:"devices"`
 	MQTTServer MQTT     `yaml:"mqtt_server"`
 	Trackers   []string `yaml:"trackers"`
+	location   string   `yaml:"-"`
 }
 
 // DefaultLocation corresponds to the default path to the directory where
@@ -41,7 +42,7 @@ func Retrieve(location string) Config {
 }
 
 func retrieve(location string, name string) Config {
-	config := Config{}
+	config := Config{location: location}
 	filename := filepath.Join(location, name)
 	content, err := ioutil.ReadFile(filename)
 	if err == nil {
@@ -51,4 +52,9 @@ func retrieve(location string, name string) Config {
 		log.Fatal(err)
 	}
 	return config
+}
+
+// Save persists the device list to disk.
+func (cfg *Config) Save(devices []Device) {
+	save(devices, cfg.location)
 }

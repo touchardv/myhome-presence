@@ -52,22 +52,12 @@ func (r *Registry) GetDevices() []config.Device {
 
 func (r *Registry) handle(presence chan string) {
 	log.Info("Starting: presence handler")
-	check := time.NewTimer(1 * time.Minute)
 	for {
 		select {
-		case <-check.C:
-			now := time.Now()
-			for _, d := range r.devices {
-				if d.Present && now.Sub(d.LastSeenAt).Minutes() > 5 {
-					log.Info("Device '", d.Description, "' is not present")
-					d.Present = false
-					r.publishPresence(d)
-				}
-			}
-			check.Reset(1 * time.Minute)
 		case <-r.stopping:
 			log.Info("Stopped: presence handler")
 			return
+
 		case identifier := <-presence:
 			if d, ok := r.devices[identifier]; ok {
 				if d.Present == false {
@@ -83,25 +73,60 @@ func (r *Registry) handle(presence chan string) {
 	}
 }
 
+func (r *Registry) pingMissingDevices(presence chan string) {
+	log.Info("Starting: device watchdog")
+	check := time.NewTimer(5 * time.Second)
+	for {
+		select {
+		case <-r.stopping:
+			log.Info("Stopped: device watchdog")
+			return
+
+		case <-check.C:
+			devices := make(map[string]config.Device)
+			now := time.Now()
+			for _, d := range r.devices {
+				elapsedMinutes := now.Sub(d.LastSeenAt).Minutes()
+				if d.Present && elapsedMinutes > 5 {
+					log.Info("Device '", d.Description, "' is not present")
+					d.Present = false
+					r.publishPresence(d)
+				}
+
+				if d.Present == false || elapsedMinutes > 3 {
+					devices[d.Identifier] = *d
+				}
+			}
+
+			if len(devices) > 0 {
+				for _, t := range r.trackers {
+					t.Ping(devices, presence)
+				}
+			}
+			check.Reset(1 * time.Minute)
+		}
+	}
+}
+
 // Start activates the tracking of devices.
 func (r *Registry) Start() {
 	log.Info("Starting: registry")
 	r.connect()
 	presence := make(chan string, 10)
-	r.waitGroup.Add(1)
 	go func() {
 		r.handle(presence)
 		r.waitGroup.Done()
 	}()
+	go func() {
+		r.pingMissingDevices(presence)
+		r.waitGroup.Done()
+	}()
+	r.waitGroup.Add(2)
 
-	devices := make([]config.Device, 0)
-	for _, d := range r.devices {
-		devices = append(devices, *d)
-	}
 	for _, t := range r.trackers {
 		r.waitGroup.Add(1)
 		go func(t Tracker) {
-			t.Track(devices, presence, r.stopping)
+			t.Scan(presence, r.stopping)
 			r.waitGroup.Done()
 		}(t)
 	}

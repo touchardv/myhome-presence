@@ -35,17 +35,20 @@ func newIPTracker() device.Tracker {
 	}
 }
 
-const pingPacketCount = 20
-const pingPacketDelay = 200 * time.Millisecond
+const pingPacketCount = 5
+const pingPacketDelay = 100 * time.Millisecond
 const data = "AreYouThere"
 
-func (t *ipTracker) init(devices []config.Device) error {
+func (t *ipTracker) init(devices map[string]config.Device) error {
 	for _, device := range devices {
 		if len(device.IPInterfaces) == 0 {
 			continue
 		}
-		for _, i := range device.IPInterfaces {
-			targetAddr := &net.UDPAddr{IP: net.ParseIP(i.IPAddress)}
+		for _, itf := range device.IPInterfaces {
+			if len(itf.IPAddress) == 0 {
+				continue
+			}
+			targetAddr := &net.UDPAddr{IP: net.ParseIP(itf.IPAddress)}
 			t.devices[targetAddr.String()] = device
 		}
 	}
@@ -60,7 +63,7 @@ func (t *ipTracker) init(devices []config.Device) error {
 	return nil
 }
 
-func (t *ipTracker) receivePingReplies(duration time.Duration, presence chan string) {
+func (t *ipTracker) receivePingReplies(devices map[string]config.Device, duration time.Duration, presence chan string) {
 	go func() {
 		now := time.Now()
 		t.socket.SetReadDeadline(now.Add(duration))
@@ -84,9 +87,11 @@ func (t *ipTracker) receivePingReplies(duration time.Duration, presence chan str
 				continue
 			}
 			if device, ok := t.devices[remoteAddr.String()]; ok {
+				log.Debug("Got reply from: ", device.Identifier, " on ", remoteAddr.String())
 				presence <- device.Identifier
+				delete(devices, device.Identifier)
 			} else {
-				log.Warn("Ignoring ping reply from: ", remoteAddr.String())
+				log.Debug("Ignoring: ", remoteAddr.String())
 			}
 		}
 		t.doneReceiving <- true
@@ -94,17 +99,20 @@ func (t *ipTracker) receivePingReplies(duration time.Duration, presence chan str
 	}()
 }
 
-func (t *ipTracker) sendPingRequests() {
+func (t *ipTracker) sendPingRequests(devices map[string]config.Device) {
 	t.sequenceNumber++
 	request := icmp.Echo{ID: os.Getpid(), Seq: t.sequenceNumber, Data: []byte(data)}
 	message := icmp.Message{Type: ipv4.ICMPTypeEcho, Body: &request}
 	outgoingBytes, err := message.Marshal(nil)
 
 	for i := 1; i <= pingPacketCount; i++ {
-		log.Debug("Sending ping packet: ", i, "/", pingPacketCount)
-		for _, device := range t.devices {
-			for _, i := range device.IPInterfaces {
-				targetIP := net.ParseIP(i.IPAddress)
+		for _, device := range devices {
+			for _, itf := range device.IPInterfaces {
+				if len(itf.IPAddress) == 0 {
+					continue
+				}
+				log.Debugf("Sending ping packet to %s (%s) %d/%d ", device.Identifier, itf.IPAddress, i, pingPacketCount)
+				targetIP := net.ParseIP(itf.IPAddress)
 				targetAddr := &net.UDPAddr{IP: targetIP}
 				_, err = t.socket.WriteTo(outgoingBytes, targetAddr)
 				if err != nil {
@@ -120,29 +128,15 @@ func (t *ipTracker) sendPingRequests() {
 	log.Debug("Done sending ping packets")
 }
 
-func (t *ipTracker) Track(devices []config.Device, presence chan string, stopping chan struct{}) {
-	log.Info("Starting: ip tracker")
-	ticker := time.NewTicker(1 * time.Minute)
-	for {
-		err := t.init(devices)
-		if err != nil {
-			log.Error("Init failed: ", err)
-			time.Sleep(5 * time.Second)
-			continue
-		}
-		t.receivePingReplies(15*time.Second, presence)
-		t.sendPingRequests()
-		<-t.doneReceiving
-		t.socket.Close()
-
-		select {
-		case <-stopping:
-			ticker.Stop()
-			log.Info("Stopped: ip tracker")
-			return
-
-		case <-ticker.C:
-			break
-		}
+func (t *ipTracker) Ping(devices map[string]config.Device, presence chan string) {
+	err := t.init(devices)
+	if err != nil {
+		log.Error("Init failed: ", err)
+		return
 	}
+	defer t.socket.Close()
+
+	t.receivePingReplies(devices, 10*time.Second, presence)
+	t.sendPingRequests(devices)
+	<-t.doneReceiving
 }

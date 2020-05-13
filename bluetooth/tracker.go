@@ -6,7 +6,6 @@ import (
 
 	"github.com/bettercap/gatt"
 	log "github.com/sirupsen/logrus"
-	"github.com/touchardv/myhome-presence/config"
 	"github.com/touchardv/myhome-presence/device"
 )
 
@@ -17,31 +16,18 @@ func EnableTracker() {
 
 type btTracker struct {
 	device   gatt.Device
-	devices  map[string]config.Device
 	scanning bool
 	presence chan string
 }
 
 func newBTTracker() device.Tracker {
 	return &btTracker{
-		devices:  make(map[string]config.Device, 10),
 		scanning: false,
 	}
 }
 
-func (t *btTracker) init(devices []config.Device, presence chan string) {
-	for _, device := range devices {
-		if len(device.BLEAddress) == 0 && len(device.BTAddress) == 0 {
-			continue
-		}
-		t.devices[device.BLEAddress] = device
-	}
-	t.presence = presence
-}
-
-func (t *btTracker) Track(devices []config.Device, presence chan string, stopping chan struct{}) {
+func (t *btTracker) Scan(presence chan string, stopping chan struct{}) {
 	log.Info("Starting: Bluetooth tracker")
-	t.init(devices, presence)
 	t.startScanning()
 	timer := time.NewTimer(30 * time.Second)
 	for {
@@ -51,7 +37,6 @@ func (t *btTracker) Track(devices []config.Device, presence chan string, stoppin
 				t.stopScanning()
 				// Wait a little before doing the ping
 				time.Sleep(2 * time.Second)
-				t.ping()
 			} else {
 				t.startScanning()
 			}

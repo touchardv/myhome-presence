@@ -7,7 +7,9 @@ import (
 
 // Tracker tracks the presence of devices.
 type Tracker interface {
-	Track(devices []config.Device, presence chan string, stopping chan struct{})
+	Scan(presence chan string, stopping chan struct{})
+
+	Ping(devices map[string]config.Device, presence chan string)
 }
 
 // NewTrackerFunc is a factory function for instantiating a new Tracker.

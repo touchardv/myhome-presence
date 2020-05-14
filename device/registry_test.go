@@ -27,7 +27,11 @@ func newDummyTracker() Tracker {
 	return &dummyTracker{}
 }
 
-func (t *dummyTracker) Track(devices []config.Device, presence chan string, stopping chan struct{}) {
+func (t *dummyTracker) Scan(presence chan string, stopping chan struct{}) {
+	// noop
+}
+
+func (t *dummyTracker) Ping(devices map[string]config.Device, presence chan string) {
 	// noop
 }
 
@@ -52,7 +56,7 @@ func TestHandle(t *testing.T) {
 	assert.True(t, devices[0].LastSeenAt.IsZero())
 
 	presence := make(chan string)
-	d := Device{}
+	d := config.Device{}
 	d.Identifier = "foo"
 	go func() {
 		registry.handle(presence)

@@ -2,6 +2,7 @@ package bluetooth
 
 import (
 	"math/rand"
+	"sync"
 	"time"
 
 	"github.com/bettercap/gatt"
@@ -18,6 +19,7 @@ type btTracker struct {
 	device   gatt.Device
 	scanning bool
 	presence chan string
+	mux      sync.Mutex
 }
 
 func newBTTracker() device.Tracker {
@@ -33,14 +35,14 @@ func (t *btTracker) Scan(presence chan string, stopping chan struct{}) {
 	for {
 		select {
 		case <-timer.C:
+			t.mux.Lock()
 			if t.scanning {
 				t.stopScanning()
-				// Wait a little before doing the ping
-				time.Sleep(2 * time.Second)
 			} else {
 				t.startScanning()
 			}
 			timer.Reset(randomDuration(t.scanning))
+			t.mux.Unlock()
 		case <-stopping:
 			timer.Stop()
 			if t.scanning {

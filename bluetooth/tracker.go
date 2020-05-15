@@ -18,7 +18,7 @@ func EnableTracker() {
 type btTracker struct {
 	device   gatt.Device
 	scanning bool
-	presence chan string
+	scan     chan device.ScanResult
 	mux      sync.Mutex
 }
 
@@ -28,8 +28,9 @@ func newBTTracker() device.Tracker {
 	}
 }
 
-func (t *btTracker) Scan(presence chan string, stopping chan struct{}) {
+func (t *btTracker) Scan(scan chan device.ScanResult, stopping chan struct{}) {
 	log.Info("Starting: Bluetooth tracker")
+	t.scan = scan
 	t.startScanning()
 	timer := time.NewTimer(30 * time.Second)
 	for {

@@ -5,9 +5,32 @@ import (
 	"github.com/touchardv/myhome-presence/config"
 )
 
+// ID represents the unique ID that can be used to track a device.
+type ID int
+
+const (
+	// Undefined is the default initialised device ID.
+	Undefined ID = iota
+
+	// BLEAddress is used when a new device is discovered via BLE scanning.
+	BLEAddress
+
+	// BTAddress is used when a new device is discovered via BT scanning.
+	BTAddress
+
+	//IPAddress is used when a new device is discoverd via IP scanning.
+	IPAddress
+)
+
+// ScanResult contains the information on a newly discovered device.
+type ScanResult struct {
+	ID    ID
+	Value string
+}
+
 // Tracker tracks the presence of devices.
 type Tracker interface {
-	Scan(presence chan string, stopping chan struct{})
+	Scan(existence chan ScanResult, stopping chan struct{})
 
 	Ping(devices map[string]config.Device, presence chan string)
 }

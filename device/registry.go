@@ -1,6 +1,8 @@
 package device
 
 import (
+	"fmt"
+	"math/rand"
 	"sync"
 	"time"
 
@@ -50,13 +52,26 @@ func (r *Registry) GetDevices() []config.Device {
 	return devices
 }
 
-func (r *Registry) handle(presence chan string) {
-	log.Info("Starting: presence handler")
+func (r *Registry) handle(scan chan ScanResult, presence chan string) {
+	log.Info("Starting: scan/presence handler")
 	for {
 		select {
 		case <-r.stopping:
-			log.Info("Stopped: presence handler")
+			log.Info("Stopped: scan/presence handler")
 			return
+
+		case s := <-scan:
+			d := r.lookupDevice(s)
+			if d == nil {
+				d = r.newDevice(s)
+			}
+			if d.Present == false {
+				log.Info("Device '", d.Description, "' is present")
+				d.Present = true
+			}
+			d.LastSeenAt = time.Now()
+			r.publishPresence(d)
+			break
 
 		case identifier := <-presence:
 			if d, ok := r.devices[identifier]; ok {
@@ -71,6 +86,54 @@ func (r *Registry) handle(presence chan string) {
 			}
 		}
 	}
+}
+
+func (r *Registry) newDevice(sr ScanResult) *config.Device {
+	now := time.Now()
+	d := config.Device{
+		Description: fmt.Sprintf("Discovered device at %s", now.Format(time.RFC822)),
+		Identifier:  fmt.Sprintf("device-%d-%d", now.Unix(), rand.Intn(1000)),
+		Present:     false,
+		Status:      config.Discovered,
+	}
+	switch sr.ID {
+	case BLEAddress:
+		d.BLEAddress = sr.Value
+	case BTAddress:
+		d.BTAddress = sr.Value
+	case IPAddress:
+		d.IPInterfaces = make(map[string]config.IPInterface)
+		d.IPInterfaces["unknown"] = config.IPInterface{IPAddress: sr.Value}
+	}
+	r.devices[d.Identifier] = &d
+	log.Info("Discovered a new device: ", d.Identifier)
+	return &d
+}
+
+func (r *Registry) lookupDevice(sr ScanResult) *config.Device {
+	switch sr.ID {
+	case BLEAddress:
+		for _, d := range r.devices {
+			if d.BLEAddress == sr.Value {
+				return d
+			}
+		}
+	case BTAddress:
+		for _, d := range r.devices {
+			if d.BTAddress == sr.Value {
+				return d
+			}
+		}
+	case IPAddress:
+		for _, d := range r.devices {
+			for _, itf := range d.IPInterfaces {
+				if itf.IPAddress == sr.Value {
+					return d
+				}
+			}
+		}
+	}
+	return nil
 }
 
 func (r *Registry) pingMissingDevices(presence chan string) {
@@ -112,9 +175,10 @@ func (r *Registry) pingMissingDevices(presence chan string) {
 func (r *Registry) Start() {
 	log.Info("Starting: registry")
 	r.connect()
+	existence := make(chan ScanResult, 10)
 	presence := make(chan string, 10)
 	go func() {
-		r.handle(presence)
+		r.handle(existence, presence)
 		r.waitGroup.Done()
 	}()
 	go func() {
@@ -126,7 +190,7 @@ func (r *Registry) Start() {
 	for _, t := range r.trackers {
 		r.waitGroup.Add(1)
 		go func(t Tracker) {
-			t.Scan(presence, r.stopping)
+			t.Scan(existence, r.stopping)
 			r.waitGroup.Done()
 		}(t)
 	}

@@ -21,7 +21,7 @@ func (t *btTracker) Ping(devices map[string]config.Device, presence chan string)
 
 		log.Debug("Try to ping: ", d.BTAddress)
 		if respondToPing(d.BTAddress) {
-			t.presence <- d.Identifier
+			presence <- d.Identifier
 			delete(devices, d.Identifier)
 		}
 	}

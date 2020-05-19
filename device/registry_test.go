@@ -20,7 +20,7 @@ var device = config.Device{
 }
 
 var cfg = config.Config{
-	Devices: []config.Device{device},
+	Devices: map[string]*config.Device{"foo": &device},
 }
 
 type dummyTracker struct{}
@@ -50,7 +50,7 @@ func TestGetDevices(t *testing.T) {
 	assert.Equal(t, "foo", devices[0].Identifier)
 }
 
-func TestHandle(t *testing.T) {
+func TestHandleDevicePresence(t *testing.T) {
 	registry := NewRegistry(cfg)
 	devices := registry.GetDevices()
 
@@ -66,21 +66,40 @@ func TestHandle(t *testing.T) {
 		close(done)
 	}()
 	presence <- "foo"
-	existence <- ScanResult{ID: BLEAddress, Value: "12:34:56:78:90"}
+	// existence <- ScanResult{ID: BLEAddress, Value: "12:34:56:78:90"}
 
 	close(registry.stopping)
 	<-done
 
 	devices = registry.GetDevices()
-	assert.Equal(t, 2, len(devices))
+	assert.Equal(t, 1, len(devices))
 
 	assert.True(t, devices[0].Present)
 	assert.Equal(t, "foo", devices[0].Identifier)
 	assert.False(t, devices[0].LastSeenAt.IsZero())
+}
 
-	assert.True(t, devices[1].Present)
-	assert.False(t, devices[1].LastSeenAt.IsZero())
-	assert.Equal(t, "12:34:56:78:90", devices[1].BLEAddress)
+func TestHandleNewDevice(t *testing.T) {
+	registry := NewRegistry(config.Config{Devices: map[string]*config.Device{}})
+
+	existence := make(chan ScanResult)
+	presence := make(chan string)
+	done := make(chan struct{})
+	go func() {
+		registry.handle(existence, presence)
+		close(done)
+	}()
+	existence <- ScanResult{ID: BLEAddress, Value: "12:34:56:78:90"}
+
+	close(registry.stopping)
+	<-done
+
+	devices := registry.GetDevices()
+	assert.Equal(t, 1, len(devices))
+
+	assert.True(t, devices[0].Present)
+	assert.False(t, devices[0].LastSeenAt.IsZero())
+	assert.Equal(t, "12:34:56:78:90", devices[0].BLEAddress)
 }
 
 func TestNewDevice(t *testing.T) {

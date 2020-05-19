@@ -24,12 +24,7 @@ type Registry struct {
 
 // NewRegistry builds a new device registry.
 func NewRegistry(cfg config.Config) *Registry {
-	devices := make(map[string]*config.Device, 0)
-	for _, d := range cfg.Devices {
-		device := config.Device{}
-		device = d
-		devices[device.Identifier] = &device
-	}
+	devices := cfg.Devices
 	trackers := make([]Tracker, 0)
 	for _, name := range cfg.Trackers {
 		trackers = append(trackers, newTracker(name))

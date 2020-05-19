@@ -2,6 +2,7 @@ package config
 
 import (
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -46,10 +47,24 @@ type Device struct {
 	LastSeenAt   time.Time              `yaml:"last_seen_at"`
 }
 
-func save(devices []Device, location string) error {
+func load(location string, name string) ([]Device, error) {
+	filename := filepath.Join(location, name)
+	_, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return []Device{}, nil
+	}
+	content, err := ioutil.ReadFile(filename)
+	devices := make([]Device, 10)
+	if err == nil {
+		err = yaml.Unmarshal(content, &devices)
+	}
+	return devices, err
+}
+
+func save(devices []Device, location string, name string) error {
 	bytes, err := yaml.Marshal(devices)
 	if err == nil {
-		err = ioutil.WriteFile(filepath.Join(location, "devices.yaml"), bytes, 0644)
+		err = ioutil.WriteFile(filepath.Join(location, name), bytes, 0644)
 	}
 	return err
 }

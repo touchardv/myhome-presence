@@ -2,11 +2,11 @@ package bluetooth
 
 import (
 	"math/rand"
+	"sync"
 	"time"
 
 	"github.com/bettercap/gatt"
 	log "github.com/sirupsen/logrus"
-	"github.com/touchardv/myhome-presence/config"
 	"github.com/touchardv/myhome-presence/device"
 )
 
@@ -17,45 +17,33 @@ func EnableTracker() {
 
 type btTracker struct {
 	device   gatt.Device
-	devices  map[string]config.Device
 	scanning bool
-	presence chan string
+	scan     chan device.ScanResult
+	mux      sync.Mutex
 }
 
 func newBTTracker() device.Tracker {
 	return &btTracker{
-		devices:  make(map[string]config.Device, 10),
 		scanning: false,
 	}
 }
 
-func (t *btTracker) init(devices []config.Device, presence chan string) {
-	for _, device := range devices {
-		if len(device.BLEAddress) == 0 && len(device.BTAddress) == 0 {
-			continue
-		}
-		t.devices[device.BLEAddress] = device
-	}
-	t.presence = presence
-}
-
-func (t *btTracker) Track(devices []config.Device, presence chan string, stopping chan struct{}) {
+func (t *btTracker) Scan(scan chan device.ScanResult, stopping chan struct{}) {
 	log.Info("Starting: Bluetooth tracker")
-	t.init(devices, presence)
+	t.scan = scan
 	t.startScanning()
 	timer := time.NewTimer(30 * time.Second)
 	for {
 		select {
 		case <-timer.C:
+			t.mux.Lock()
 			if t.scanning {
 				t.stopScanning()
-				// Wait a little before doing the ping
-				time.Sleep(2 * time.Second)
-				t.ping()
 			} else {
 				t.startScanning()
 			}
 			timer.Reset(randomDuration(t.scanning))
+			t.mux.Unlock()
 		case <-stopping:
 			timer.Stop()
 			if t.scanning {

@@ -1,6 +1,8 @@
 package device
 
 import (
+	"fmt"
+	"math/rand"
 	"sync"
 	"time"
 
@@ -9,17 +11,10 @@ import (
 	"github.com/touchardv/myhome-presence/config"
 )
 
-// Device represents a tracked device and its presence status.
-type Device struct {
-	config.Device
-	Present    bool
-	LastSeenAt time.Time
-}
-
 // Registry maintains the status of all tracked devices
 // together with their presence status.
 type Registry struct {
-	devices    map[string]*Device
+	devices    map[string]*config.Device
 	trackers   []Tracker
 	mqttClient MQTT.Client
 	mqttTopic  string
@@ -28,52 +23,51 @@ type Registry struct {
 }
 
 // NewRegistry builds a new device registry.
-func NewRegistry(config config.Config) *Registry {
-	devices := make(map[string]*Device, 0)
-	for _, d := range config.Devices {
-		device := Device{Device: d, Present: false}
-		devices[device.Identifier] = &device
-	}
+func NewRegistry(cfg config.Config) *Registry {
+	devices := cfg.Devices
 	trackers := make([]Tracker, 0)
-	for _, name := range config.Trackers {
+	for _, name := range cfg.Trackers {
 		trackers = append(trackers, newTracker(name))
 	}
 	return &Registry{
 		devices:    devices,
 		trackers:   trackers,
-		mqttClient: newMQTTClient(config.MQTTServer),
-		mqttTopic:  config.MQTTServer.Topic,
+		mqttClient: newMQTTClient(cfg.MQTTServer),
+		mqttTopic:  cfg.MQTTServer.Topic,
 		stopping:   make(chan struct{}),
 	}
 }
 
 // GetDevices returns all tracked devices.
-func (r *Registry) GetDevices() []Device {
-	devices := make([]Device, 0)
+func (r *Registry) GetDevices() []config.Device {
+	devices := make([]config.Device, 0)
 	for _, d := range r.devices {
 		devices = append(devices, *d)
 	}
 	return devices
 }
 
-func (r *Registry) handle(presence chan string) {
-	log.Info("Starting: presence handler")
-	check := time.NewTimer(1 * time.Minute)
+func (r *Registry) handle(scan chan ScanResult, presence chan string) {
+	log.Info("Starting: scan/presence handler")
 	for {
 		select {
-		case <-check.C:
-			now := time.Now()
-			for _, d := range r.devices {
-				if d.Present && now.Sub(d.LastSeenAt).Minutes() > 5 {
-					log.Info("Device '", d.Description, "' is not present")
-					d.Present = false
-					r.publishPresence(d)
-				}
-			}
-			check.Reset(1 * time.Minute)
 		case <-r.stopping:
-			log.Info("Stopped: presence handler")
+			log.Info("Stopped: scan/presence handler")
 			return
+
+		case s := <-scan:
+			d := r.lookupDevice(s)
+			if d == nil {
+				d = r.newDevice(s)
+			}
+			if d.Present == false {
+				log.Info("Device '", d.Description, "' is present")
+				d.Present = true
+			}
+			d.LastSeenAt = time.Now()
+			r.publishPresence(d)
+			break
+
 		case identifier := <-presence:
 			if d, ok := r.devices[identifier]; ok {
 				if d.Present == false {
@@ -89,25 +83,116 @@ func (r *Registry) handle(presence chan string) {
 	}
 }
 
+func (r *Registry) newDevice(sr ScanResult) *config.Device {
+	now := time.Now()
+	d := config.Device{
+		Description: fmt.Sprintf("Discovered device at %s", now.Format(time.RFC822)),
+		Identifier:  fmt.Sprintf("device-%d-%d", now.Unix(), rand.Intn(1000)),
+		Present:     false,
+		Status:      config.Discovered,
+	}
+	switch sr.ID {
+	case BLEAddress:
+		d.BLEAddress = sr.Value
+	case BTAddress:
+		d.BTAddress = sr.Value
+	case IPAddress:
+		d.IPInterfaces = make(map[string]config.IPInterface)
+		d.IPInterfaces["unknown"] = config.IPInterface{IPAddress: sr.Value}
+	}
+	r.devices[d.Identifier] = &d
+	log.Info("Discovered a new device: ", d.Identifier)
+	return &d
+}
+
+func (r *Registry) lookupDevice(sr ScanResult) *config.Device {
+	switch sr.ID {
+	case BLEAddress:
+		for _, d := range r.devices {
+			if d.BLEAddress == sr.Value {
+				return d
+			}
+		}
+	case BTAddress:
+		for _, d := range r.devices {
+			if d.BTAddress == sr.Value {
+				return d
+			}
+		}
+	case IPAddress:
+		for _, d := range r.devices {
+			for _, itf := range d.IPInterfaces {
+				if itf.IPAddress == sr.Value {
+					return d
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func (r *Registry) pingLoop(presence chan string) {
+	log.Info("Starting: device watchdog")
+	check := time.NewTimer(5 * time.Second)
+	for {
+		select {
+		case <-r.stopping:
+			log.Info("Stopped: device watchdog")
+			return
+
+		case <-check.C:
+			r.pingMissingDevices(presence)
+			check.Reset(1 * time.Minute)
+		}
+	}
+}
+
+func (r *Registry) pingMissingDevices(presence chan string) {
+	devices := make(map[string]config.Device)
+	now := time.Now()
+	for _, d := range r.devices {
+		if d.Status != config.Tracked {
+			continue
+		}
+		elapsedMinutes := now.Sub(d.LastSeenAt).Minutes()
+		if d.Present && elapsedMinutes > 5 {
+			log.Info("Device '", d.Description, "' is not present")
+			d.Present = false
+			r.publishPresence(d)
+		}
+
+		if d.Present == false || elapsedMinutes > 3 {
+			devices[d.Identifier] = *d
+		}
+	}
+
+	if len(devices) > 0 {
+		for _, t := range r.trackers {
+			t.Ping(devices, presence)
+		}
+	}
+}
+
 // Start activates the tracking of devices.
 func (r *Registry) Start() {
 	log.Info("Starting: registry")
 	r.connect()
+	existence := make(chan ScanResult, 10)
 	presence := make(chan string, 10)
-	r.waitGroup.Add(1)
 	go func() {
-		r.handle(presence)
+		r.handle(existence, presence)
 		r.waitGroup.Done()
 	}()
+	go func() {
+		r.pingLoop(presence)
+		r.waitGroup.Done()
+	}()
+	r.waitGroup.Add(2)
 
-	devices := make([]config.Device, 0)
-	for _, d := range r.devices {
-		devices = append(devices, d.Device)
-	}
 	for _, t := range r.trackers {
 		r.waitGroup.Add(1)
 		go func(t Tracker) {
-			t.Track(devices, presence, r.stopping)
+			t.Scan(existence, r.stopping)
 			r.waitGroup.Done()
 		}(t)
 	}

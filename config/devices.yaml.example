@@ -1,0 +1,20 @@
+- description: My smartwatch
+  identifier: my-smartwatch
+  ble_address: 9d329f8ba3c24ae0a494b195dda27d41
+  bt_address: ""
+  ip_interfaces: {}
+  status: 0
+  present: true
+  last_seen_at: 2020-05-18T20:05:42.587258+02:00
+
+- description: My IP camera
+  identifier: my-ip-camera
+  ble_address: ""
+  bt_address: ""
+  ip_interfaces:
+    wifi:
+      ip_address: 10.1.2.3
+      mac_address: CC:AA:DD:FF:AA:BB
+  status: 0
+  present: true
+  last_seen_at: 2020-05-18T20:05:42.587258+02:00

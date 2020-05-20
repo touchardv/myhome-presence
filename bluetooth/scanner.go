@@ -3,6 +3,7 @@ package bluetooth
 import (
 	"github.com/bettercap/gatt"
 	log "github.com/sirupsen/logrus"
+	"github.com/touchardv/myhome-presence/device"
 )
 
 func (t *btTracker) onDeviceStateChanged(d gatt.Device, s gatt.State) {
@@ -17,10 +18,7 @@ func (t *btTracker) onDeviceStateChanged(d gatt.Device, s gatt.State) {
 
 func (t *btTracker) onPeripheralDiscovered(p gatt.Peripheral, a *gatt.Advertisement, rssi int) {
 	log.Debugf("Discovered a Bluetooth device: %s %s %s", p.ID(), p.Name(), a.LocalName)
-	d, ok := t.devices[p.ID()]
-	if ok {
-		t.presence <- d.Identifier
-	}
+	t.scan <- device.ScanResult{ID: device.BLEAddress, Value: p.ID()}
 }
 
 func (t *btTracker) startScanning() {

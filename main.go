@@ -38,6 +38,7 @@ func main() {
 
 	server.Stop()
 	registry.Stop()
+	config.Save(registry.GetDevices())
 	log.Info("...Stopped")
 	log.Exit(0)
 }

@@ -1,25 +1,25 @@
 devices:
-- description: My laptop
-  identifier: my-laptop
-  ip_interfaces:
-    ethernet:
-      ip_address: 10.10.10.123
-      mac_address: AB:CD:EF:01:02:02
-    wifi:
-      ip_address: 10.10.10.124
-      mac_address: AB:CD:EF:01:02:03
+  my-laptop:
+    description: My laptop
+    ip_interfaces:
+      ethernet:
+        ip_address: 10.10.10.123
+        mac_address: AB:CD:EF:01:02:02
+      wifi:
+        ip_address: 10.10.10.124
+        mac_address: AB:CD:EF:01:02:03
 
-- description: My smartwatch
-  identifier: my-smartwatch
-  ble_address: 9d329f8ba3c24ae0a494b195dda27d41
+  my-smartwatch:
+    description: My smartwatch
+    ble_address: 9d329f8ba3c24ae0a494b195dda27d41
 
-- description: My phone
-  identifier: my-phone
-  ip_interfaces:
-    wifi:
-      ip_address: 10.10.10.124
-      mac_address: AB:CD:EF:01:02:03
-  bt_address: AA:BB:CC:DD:EE
+  my-phone:
+    description: My phone
+    ip_interfaces:
+      wifi:
+        ip_address: 10.10.10.124
+        mac_address: AB:CD:EF:01:02:03
+    bt_address: AA:BB:CC:DD:EE
 
 mqtt_server:
   hostname: 192.10.20.1

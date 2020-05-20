@@ -14,5 +14,6 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.2.2
 	golang.org/x/net v0.0.0-20191119073136-fc4aabc6c914
+	golang.org/x/sys v0.0.0-20200223170610-d5e6a3e2c0ae
 	gopkg.in/yaml.v2 v2.2.5
 )

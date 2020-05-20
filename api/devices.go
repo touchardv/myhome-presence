@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/touchardv/myhome-presence/device"
+	"github.com/touchardv/myhome-presence/config"
 )
 
 // swagger:response deviceArray
-type deviceArray []device.Device
+type deviceArray []config.Device
 
 // swagger:route GET /devices devices listDevices
 // responses:

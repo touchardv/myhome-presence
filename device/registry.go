@@ -38,6 +38,15 @@ func NewRegistry(cfg config.Config) *Registry {
 	}
 }
 
+// FindDevice lookups a device given its identifier.
+func (r *Registry) FindDevice(id string) (config.Device, bool) {
+	if d, ok := r.devices[id]; ok {
+		return *d, true
+	}
+	log.Warn("Could not find device with identifier: ", id)
+	return config.Device{}, false
+}
+
 // GetDevices returns all tracked devices.
 func (r *Registry) GetDevices() []config.Device {
 	devices := make([]config.Device, 0)

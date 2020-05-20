@@ -131,7 +131,7 @@ func (r *Registry) lookupDevice(sr ScanResult) *config.Device {
 	return nil
 }
 
-func (r *Registry) pingMissingDevices(presence chan string) {
+func (r *Registry) pingLoop(presence chan string) {
 	log.Info("Starting: device watchdog")
 	check := time.NewTimer(5 * time.Second)
 	for {
@@ -141,27 +141,34 @@ func (r *Registry) pingMissingDevices(presence chan string) {
 			return
 
 		case <-check.C:
-			devices := make(map[string]config.Device)
-			now := time.Now()
-			for _, d := range r.devices {
-				elapsedMinutes := now.Sub(d.LastSeenAt).Minutes()
-				if d.Present && elapsedMinutes > 5 {
-					log.Info("Device '", d.Description, "' is not present")
-					d.Present = false
-					r.publishPresence(d)
-				}
-
-				if d.Present == false || elapsedMinutes > 3 {
-					devices[d.Identifier] = *d
-				}
-			}
-
-			if len(devices) > 0 {
-				for _, t := range r.trackers {
-					t.Ping(devices, presence)
-				}
-			}
+			r.pingMissingDevices(presence)
 			check.Reset(1 * time.Minute)
+		}
+	}
+}
+
+func (r *Registry) pingMissingDevices(presence chan string) {
+	devices := make(map[string]config.Device)
+	now := time.Now()
+	for _, d := range r.devices {
+		if d.Status != config.Tracked {
+			continue
+		}
+		elapsedMinutes := now.Sub(d.LastSeenAt).Minutes()
+		if d.Present && elapsedMinutes > 5 {
+			log.Info("Device '", d.Description, "' is not present")
+			d.Present = false
+			r.publishPresence(d)
+		}
+
+		if d.Present == false || elapsedMinutes > 3 {
+			devices[d.Identifier] = *d
+		}
+	}
+
+	if len(devices) > 0 {
+		for _, t := range r.trackers {
+			t.Ping(devices, presence)
 		}
 	}
 }
@@ -177,7 +184,7 @@ func (r *Registry) Start() {
 		r.waitGroup.Done()
 	}()
 	go func() {
-		r.pingMissingDevices(presence)
+		r.pingLoop(presence)
 		r.waitGroup.Done()
 	}()
 	r.waitGroup.Add(2)

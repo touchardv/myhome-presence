@@ -2,6 +2,7 @@ package device
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/touchardv/myhome-presence/config"
@@ -23,23 +24,27 @@ var cfg = config.Config{
 	Devices: map[string]*config.Device{"foo": &device},
 }
 
-type dummyTracker struct{}
+type dummyTracker struct {
+	pingCount int
+	scanCount int
+}
+
+var tracker dummyTracker
 
 func newDummyTracker() Tracker {
-	return &dummyTracker{}
+	return &tracker
 }
 
 func (t *dummyTracker) Scan(existence chan ScanResult, stopping chan struct{}) {
-	// noop
+	t.scanCount++
 }
 
 func (t *dummyTracker) Ping(devices map[string]config.Device, presence chan string) {
-	// noop
+	t.pingCount++
 }
 
 func init() {
-	Register("bluetooth", newDummyTracker)
-	Register("ipv4", newDummyTracker)
+	Register("dummy", newDummyTracker)
 }
 
 func TestGetDevices(t *testing.T) {
@@ -66,7 +71,6 @@ func TestHandleDevicePresence(t *testing.T) {
 		close(done)
 	}()
 	presence <- "foo"
-	// existence <- ScanResult{ID: BLEAddress, Value: "12:34:56:78:90"}
 
 	close(registry.stopping)
 	<-done
@@ -100,6 +104,7 @@ func TestHandleNewDevice(t *testing.T) {
 	assert.True(t, devices[0].Present)
 	assert.False(t, devices[0].LastSeenAt.IsZero())
 	assert.Equal(t, "12:34:56:78:90", devices[0].BLEAddress)
+	assert.Equal(t, config.Discovered, devices[0].Status)
 }
 
 func TestNewDevice(t *testing.T) {
@@ -137,4 +142,30 @@ func TestLookupDevice(t *testing.T) {
 
 	d = registry.lookupDevice(ScanResult{ID: BLEAddress, Value: "foobar"})
 	assert.Nil(t, d)
+}
+
+func TestPingMissingDevices(t *testing.T) {
+	device := config.Device{Identifier: "foo", Status: config.Undefined}
+	registry := NewRegistry(config.Config{
+		Devices:  map[string]*config.Device{"foo": &device},
+		Trackers: []string{"dummy"},
+	})
+	presence := make(chan string)
+
+	// No ping: device is not tracked
+	registry.pingMissingDevices(presence)
+	assert.Equal(t, 0, tracker.pingCount)
+
+	// No ping: device is present and seen recently
+	device.Status = config.Tracked
+	device.LastSeenAt = time.Now()
+	device.Present = true
+	registry.pingMissingDevices(presence)
+	assert.Equal(t, 0, tracker.pingCount)
+
+	// Ping: device is absent and seen a while ago
+	device.LastSeenAt = time.Now().Add(-24 * time.Hour)
+	device.Present = false
+	registry.pingMissingDevices(presence)
+	assert.Equal(t, 1, tracker.pingCount)
 }

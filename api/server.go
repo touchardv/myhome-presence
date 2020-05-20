@@ -34,7 +34,6 @@ func NewServer(r *device.Registry) *Server {
 		handlers.AllowedOrigins([]string{"*"}),
 		handlers.AllowCredentials())
 
-	router.Use(cors)
 	router.HandleFunc("/health-check", healthCheck).Methods("GET")
 	router.HandleFunc("/api/docs", docs.GetSwaggerDocument).Methods("GET")
 	router.HandleFunc("/api/devices", apiContext.listDevices).Methods("GET")
@@ -44,7 +43,7 @@ func NewServer(r *device.Registry) *Server {
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 		IdleTimeout:  60 * time.Second,
-		Handler:      router,
+		Handler:      cors(router),
 	}
 	return &Server{
 		server:  server,

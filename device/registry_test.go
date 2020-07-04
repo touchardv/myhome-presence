@@ -156,16 +156,24 @@ func TestPingMissingDevices(t *testing.T) {
 	registry.pingMissingDevices(presence)
 	assert.Equal(t, 0, tracker.pingCount)
 
-	// No ping: device is present and seen recently
+	// No ping: device is present and seen less than 5 minutes ago
 	device.Status = config.Tracked
-	device.LastSeenAt = time.Now()
+	device.LastSeenAt = time.Now().Add(-3 * time.Minute)
 	device.Present = true
 	registry.pingMissingDevices(presence)
 	assert.Equal(t, 0, tracker.pingCount)
+	assert.True(t, device.Present)
 
-	// Ping: device is absent and seen a while ago
-	device.LastSeenAt = time.Now().Add(-24 * time.Hour)
-	device.Present = false
+	// Ping: device is present and seen more than 5 minutes ago
+	device.LastSeenAt = time.Now().Add(-7 * time.Minute)
 	registry.pingMissingDevices(presence)
 	assert.Equal(t, 1, tracker.pingCount)
+	assert.True(t, device.Present)
+
+	// Ping: device is absent and seen more than 10 minutes ago
+	device.LastSeenAt = time.Now().Add(-15 * time.Minute)
+	device.Present = false
+	registry.pingMissingDevices(presence)
+	assert.Equal(t, 2, tracker.pingCount)
+	assert.False(t, device.Present)
 }

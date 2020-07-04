@@ -157,27 +157,33 @@ func (r *Registry) pingLoop(presence chan string) {
 }
 
 func (r *Registry) pingMissingDevices(presence chan string) {
-	devices := make(map[string]config.Device)
+	missing := make(map[string]config.Device)
 	now := time.Now()
 	for _, d := range r.devices {
 		if d.Status != config.Tracked {
 			continue
 		}
 		elapsedMinutes := now.Sub(d.LastSeenAt).Minutes()
-		if d.Present && elapsedMinutes > 5 {
-			log.Info("Device '", d.Description, "' is not present")
-			d.Present = false
-			r.publishPresence(d)
-		}
-
-		if d.Present == false || elapsedMinutes > 3 {
-			devices[d.Identifier] = *d
+		if d.Present == false || elapsedMinutes >= 5 {
+			missing[d.Identifier] = *d
 		}
 	}
 
-	if len(devices) > 0 {
+	if len(missing) > 0 {
 		for _, t := range r.trackers {
-			t.Ping(devices, presence)
+			t.Ping(missing, presence)
+		}
+
+		if len(missing) > 0 {
+			for _, m := range missing {
+				d := r.devices[m.Identifier]
+				elapsedMinutes := now.Sub(d.LastSeenAt).Minutes()
+				if d.Present && elapsedMinutes > 10 {
+					log.Info("Device '", d.Description, "' is not present")
+					d.Present = false
+					r.publishPresence(d)
+				}
+			}
 		}
 	}
 }

@@ -37,14 +37,14 @@ func (s Status) String() string {
 
 // Device represents a single device that can be tracked.
 type Device struct {
-	Description  string
-	Identifier   string
-	BLEAddress   string                 `yaml:"ble_address"`
-	BTAddress    string                 `yaml:"bt_address"`
-	IPInterfaces map[string]IPInterface `yaml:"ip_interfaces"`
-	Status       Status                 `yaml:"status"`
-	Present      bool                   `yaml:"present"`
-	LastSeenAt   time.Time              `yaml:"last_seen_at"`
+	Description  string                 `json:"description"`
+	Identifier   string                 `json:"identifier"`
+	BLEAddress   string                 `json:"ble_address" yaml:"ble_address"`
+	BTAddress    string                 `json:"bt_address" yaml:"bt_address"`
+	IPInterfaces map[string]IPInterface `json:"ip_interfaces" yaml:"ip_interfaces"`
+	Status       Status                 `json:"status" yaml:"status"`
+	Present      bool                   `json:"present" yaml:"present"`
+	LastSeenAt   time.Time              `json:"last_seen_at" yaml:"last_seen_at"`
 }
 
 func load(location string, name string) ([]Device, error) {

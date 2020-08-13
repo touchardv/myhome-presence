@@ -8,6 +8,74 @@ import (
 	"github.com/touchardv/myhome-presence/config"
 )
 
+// swagger:parameters registerDevice
+type deviceBodyParameter struct {
+	// A device
+	//
+	// in: body
+	// required: true
+	Device deviceParameter
+}
+
+type deviceParameter struct {
+	// example: My phone
+	Description string `json:"description"`
+	// example: my-phone
+	// required: true
+	Identifier string `json:"identifier"`
+	// example: AA:BB:CC:DD:EE
+	BLEAddress string `json:"ble_address"`
+	// example: AA:BB:CC:DD:EE
+	BTAddress string `json:"bt_address"`
+	// example: { "wifi": { "ip_address": "10.10.10.124", "mac_address": "AB:CD:EF:01:02:03" } }
+	IPInterfaces map[string]ipInterfaceParameter `json:"ip_interfaces"`
+}
+
+type ipInterfaceParameter struct {
+	// required: true
+	IPAddress string `json:"ip_address"`
+	// required: true
+	MACAddress string `json:"mac_address"`
+}
+
+// swagger:route POST /devices devices registerDevice
+//
+// Register a new device.
+//
+// responses:
+//  201:
+//	400:
+func (c *apiContext) registerDevice(w http.ResponseWriter, r *http.Request) {
+	param := deviceParameter{}
+	err := json.NewDecoder(r.Body).Decode(&param)
+	if err == nil {
+		d := convert(param)
+		if c.registry.AddDevice(d) {
+			w.WriteHeader(http.StatusCreated)
+			return
+		}
+	}
+
+	w.WriteHeader(http.StatusBadRequest)
+}
+
+func convert(p deviceParameter) config.Device {
+	d := config.Device{
+		Description:  p.Description,
+		Identifier:   p.Identifier,
+		BLEAddress:   p.BLEAddress,
+		BTAddress:    p.BTAddress,
+		IPInterfaces: make(map[string]config.IPInterface, len(p.IPInterfaces)),
+	}
+	for name, itf := range p.IPInterfaces {
+		d.IPInterfaces[name] = config.IPInterface{
+			IPAddress:  itf.IPAddress,
+			MACAddress: itf.MACAddress,
+		}
+	}
+	return d
+}
+
 // swagger:parameters findDevice
 type deviceID struct {
 	// The ID of the device
@@ -18,7 +86,9 @@ type deviceID struct {
 }
 
 // swagger:route GET /devices/{id} devices findDevice
+//
 // Find a device given its identifier.
+//
 // responses:
 //   200: Device
 func (c *apiContext) findDevice(w http.ResponseWriter, r *http.Request) {

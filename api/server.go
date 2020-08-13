@@ -36,6 +36,7 @@ func NewServer(r *device.Registry) *Server {
 
 	router.HandleFunc("/health-check", healthCheck).Methods("GET")
 	router.HandleFunc("/api/docs", docs.GetSwaggerDocument).Methods("GET")
+	router.HandleFunc("/api/devices", apiContext.registerDevice).Methods("POST")
 	router.HandleFunc("/api/devices/{id}", apiContext.findDevice).Methods("GET")
 	router.HandleFunc("/api/devices", apiContext.listDevices).Methods("GET")
 

@@ -38,6 +38,21 @@ func NewRegistry(cfg config.Config) *Registry {
 	}
 }
 
+// AddDevice adds a new device to the registry.
+func (r *Registry) AddDevice(d config.Device) bool {
+	if len(d.Identifier) == 0 {
+		log.Warn("Could not add device: identifier is empty")
+		return false
+	}
+	if _, ok := r.devices[d.Identifier]; ok {
+		log.Warn("Could not add device: identifier '", d.Identifier, "' already is use")
+		return false
+	}
+	log.Info("Device added: ", d.Identifier)
+	r.devices[d.Identifier] = &d
+	return true
+}
+
 // FindDevice lookups a device given its identifier.
 func (r *Registry) FindDevice(id string) (config.Device, bool) {
 	if d, ok := r.devices[id]; ok {
@@ -47,7 +62,7 @@ func (r *Registry) FindDevice(id string) (config.Device, bool) {
 	return config.Device{}, false
 }
 
-// GetDevices returns all tracked devices.
+// GetDevices returns all known devices.
 func (r *Registry) GetDevices() []config.Device {
 	devices := make([]config.Device, 0)
 	for _, d := range r.devices {

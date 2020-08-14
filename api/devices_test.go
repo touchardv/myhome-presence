@@ -63,6 +63,22 @@ func TestListDevices(t *testing.T) {
 	assert.Contains(t, body, "[]")
 }
 
+func TestUnregisterDevice(t *testing.T) {
+	devices := make(map[string]*config.Device, 0)
+	devices["foo"] = &config.Device{Identifier: "foo"}
+	registry := device.NewRegistry(config.Config{Devices: devices})
+	server := NewServer(registry)
+
+	req, _ := http.NewRequest("DELETE", "/api/devices/bar", nil)
+	response := performRequest(server, req)
+	assert.Equal(t, http.StatusNotFound, response.Code)
+
+	req, _ = http.NewRequest("DELETE", "/api/devices/foo", nil)
+	response = performRequest(server, req)
+	assert.Equal(t, http.StatusNoContent, response.Code)
+	assert.Equal(t, 0, len(devices))
+}
+
 func performRequest(server *Server, req *http.Request) *httptest.ResponseRecorder {
 	response := httptest.NewRecorder()
 	server.router.ServeHTTP(response, req)

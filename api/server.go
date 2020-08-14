@@ -32,11 +32,13 @@ func NewServer(r *device.Registry) *Server {
 	cors := handlers.CORS(
 		handlers.AllowedHeaders([]string{"content-type"}),
 		handlers.AllowedOrigins([]string{"*"}),
+		handlers.AllowedMethods([]string{"DELETE", "GET", "POST"}),
 		handlers.AllowCredentials())
 
 	router.HandleFunc("/health-check", healthCheck).Methods("GET")
 	router.HandleFunc("/api/docs", docs.GetSwaggerDocument).Methods("GET")
 	router.HandleFunc("/api/devices", apiContext.registerDevice).Methods("POST")
+	router.HandleFunc("/api/devices/{id}", apiContext.unregisterDevice).Methods("DELETE")
 	router.HandleFunc("/api/devices/{id}", apiContext.findDevice).Methods("GET")
 	router.HandleFunc("/api/devices", apiContext.listDevices).Methods("GET")
 

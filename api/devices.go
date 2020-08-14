@@ -76,7 +76,7 @@ func convert(p deviceParameter) config.Device {
 	return d
 }
 
-// swagger:parameters findDevice
+// swagger:parameters findDevice unregisterDevice
 type deviceID struct {
 	// The ID of the device
 	//
@@ -85,12 +85,30 @@ type deviceID struct {
 	ID string `json:"id"`
 }
 
+// swagger:route DELETE /devices/{id} devices unregisterDevice
+//
+// Unregister a device given its identifier.
+//
+// responses:
+// 	 204:
+//   404:
+func (c *apiContext) unregisterDevice(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	found := c.registry.RemoveDevice(vars["id"])
+	if found {
+		w.WriteHeader(http.StatusNoContent)
+	} else {
+		http.NotFound(w, r)
+	}
+}
+
 // swagger:route GET /devices/{id} devices findDevice
 //
 // Find a device given its identifier.
 //
 // responses:
 //   200: Device
+//   404:
 func (c *apiContext) findDevice(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	d, found := c.registry.FindDevice(vars["id"])

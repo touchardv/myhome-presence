@@ -203,6 +203,17 @@ func (r *Registry) pingMissingDevices(presence chan string) {
 	}
 }
 
+// RemoveDevice removes a device.
+func (r *Registry) RemoveDevice(id string) bool {
+	if _, ok := r.devices[id]; ok {
+		delete(r.devices, id)
+		log.Info("Device removed: ", id)
+		return true
+	}
+	log.Warn("Could not find device with identifier: ", id)
+	return false
+}
+
 // Start activates the tracking of devices.
 func (r *Registry) Start() {
 	log.Info("Starting: registry")

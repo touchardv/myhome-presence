@@ -1,8 +1,10 @@
 package device
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
+	"strings"
 	"sync"
 	"time"
 
@@ -40,8 +42,8 @@ func NewRegistry(cfg config.Config) *Registry {
 
 // AddDevice adds a new device to the registry.
 func (r *Registry) AddDevice(d config.Device) bool {
-	if len(d.Identifier) == 0 {
-		log.Warn("Could not add device: identifier is empty")
+	if len(strings.TrimSpace(d.Identifier)) == 0 {
+		log.Warn("Could not add device: identifier is empty/blank")
 		return false
 	}
 	if _, ok := r.devices[d.Identifier]; ok {
@@ -246,4 +248,26 @@ func (r *Registry) Stop() {
 	r.waitGroup.Wait()
 	r.disconnect()
 	log.Info("Stopped: registry")
+}
+
+// UpdateDevice updates an existing device.
+func (r *Registry) UpdateDevice(id string, ud config.Device) (config.Device, error) {
+	d, found := r.devices[id]
+	if !found {
+		return config.Device{}, errors.New("Device not found: " + id)
+	}
+	if len(strings.TrimSpace(ud.Identifier)) == 0 {
+		return config.Device{}, errors.New("Device id can not be empty/blank")
+	}
+	if id != ud.Identifier {
+		if _, found := r.devices[ud.Identifier]; found {
+			return config.Device{}, errors.New("Device id is already taken")
+		}
+		r.devices[ud.Identifier] = d
+		delete(r.devices, id)
+		log.Infof("Device '%s' renamed to '%s'", id, ud.Identifier)
+	}
+
+	*d = ud
+	return *d, nil
 }

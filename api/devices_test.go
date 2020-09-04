@@ -79,6 +79,26 @@ func TestUnregisterDevice(t *testing.T) {
 	assert.Equal(t, 0, len(devices))
 }
 
+func TestUpdateDevice(t *testing.T) {
+	devices := make(map[string]*config.Device, 0)
+	devices["foo"] = &config.Device{Identifier: "foo", Description: "old foo"}
+	registry := device.NewRegistry(config.Config{Devices: devices})
+	server := NewServer(registry)
+
+	jsonStr := []byte(`{"identifier": "foo", "description": "new foo"}`)
+	req, _ := http.NewRequest("PUT", "/api/devices/bar", bytes.NewBuffer(jsonStr))
+	response := performRequest(server, req)
+	assert.Equal(t, http.StatusBadRequest, response.Code)
+
+	req, _ = http.NewRequest("PUT", "/api/devices/foo", bytes.NewBuffer(jsonStr))
+	response = performRequest(server, req)
+	assert.Equal(t, http.StatusOK, response.Code)
+
+	d, found := registry.FindDevice("foo")
+	assert.True(t, found)
+	assert.Equal(t, "new foo", d.Description)
+}
+
 func performRequest(server *Server, req *http.Request) *httptest.ResponseRecorder {
 	response := httptest.NewRecorder()
 	server.router.ServeHTTP(response, req)

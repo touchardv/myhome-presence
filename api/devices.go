@@ -8,7 +8,7 @@ import (
 	"github.com/touchardv/myhome-presence/config"
 )
 
-// swagger:parameters registerDevice
+// swagger:parameters registerDevice updateDevice
 type deviceBodyParameter struct {
 	// A device
 	//
@@ -76,7 +76,7 @@ func convert(p deviceParameter) config.Device {
 	return d
 }
 
-// swagger:parameters findDevice unregisterDevice
+// swagger:parameters findDevice unregisterDevice updateDevice
 type deviceID struct {
 	// The ID of the device
 	//
@@ -102,6 +102,29 @@ func (c *apiContext) unregisterDevice(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// swagger:route PUT /devices/{id} devices updateDevice
+//
+// Update a device given its identifier.
+//
+// responses:
+//   200: Device
+//   404:
+func (c *apiContext) updateDevice(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	param := deviceParameter{}
+	err := json.NewDecoder(r.Body).Decode(&param)
+	if err == nil {
+		d := convert(param)
+		d, err = c.registry.UpdateDevice(vars["id"], d)
+		if err == nil {
+			w.Header().Add("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(d)
+			return
+		}
+	}
+	w.WriteHeader(http.StatusBadRequest)
+}
+
 // swagger:route GET /devices/{id} devices findDevice
 //
 // Find a device given its identifier.
@@ -124,7 +147,9 @@ func (c *apiContext) findDevice(w http.ResponseWriter, r *http.Request) {
 type deviceArray []config.Device
 
 // swagger:route GET /devices devices listDevices
+//
 // List all known device(s).
+//
 // responses:
 //   200: deviceArray
 func (c *apiContext) listDevices(w http.ResponseWriter, r *http.Request) {

@@ -2,7 +2,10 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
+
+	"github.com/touchardv/myhome-presence/device"
 
 	"github.com/gorilla/mux"
 	"github.com/touchardv/myhome-presence/config"
@@ -123,7 +126,11 @@ func (c *apiContext) updateDevice(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	w.WriteHeader(http.StatusBadRequest)
+	if errors.Is(err, device.ErrNotFound) {
+		w.WriteHeader(http.StatusNotFound)
+	} else {
+		w.WriteHeader(http.StatusBadRequest)
+	}
 }
 
 // swagger:route GET /devices/{id} devices findDevice

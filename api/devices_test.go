@@ -88,7 +88,7 @@ func TestUpdateDevice(t *testing.T) {
 	jsonStr := []byte(`{"identifier": "foo", "description": "new foo"}`)
 	req, _ := http.NewRequest("PUT", "/api/devices/bar", bytes.NewBuffer(jsonStr))
 	response := performRequest(server, req)
-	assert.Equal(t, http.StatusBadRequest, response.Code)
+	assert.Equal(t, http.StatusNotFound, response.Code)
 
 	req, _ = http.NewRequest("PUT", "/api/devices/foo", bytes.NewBuffer(jsonStr))
 	response = performRequest(server, req)

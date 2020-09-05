@@ -46,8 +46,8 @@ type ipInterfaceParameter struct {
 // Register a new device.
 //
 // responses:
-//  201:
-//	400:
+//   201: description: Success
+//   400: description: Invalid parameters
 func (c *apiContext) registerDevice(w http.ResponseWriter, r *http.Request) {
 	param := deviceParameter{}
 	err := json.NewDecoder(r.Body).Decode(&param)
@@ -94,8 +94,8 @@ type deviceID struct {
 // Unregister a device given its identifier.
 //
 // responses:
-// 	 204:
-//   404:
+// 	 204: description: Success
+//   404: description: Not found
 func (c *apiContext) unregisterDevice(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	err := c.registry.RemoveDevice(vars["id"])
@@ -112,7 +112,8 @@ func (c *apiContext) unregisterDevice(w http.ResponseWriter, r *http.Request) {
 //
 // responses:
 //   200: Device
-//   404:
+//   400: description: Invalid parameters
+//   404: description: Not found
 func (c *apiContext) updateDevice(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	param := deviceParameter{}
@@ -139,7 +140,7 @@ func (c *apiContext) updateDevice(w http.ResponseWriter, r *http.Request) {
 //
 // responses:
 //   200: Device
-//   404:
+//   404: description: Not found
 func (c *apiContext) findDevice(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	d, err := c.registry.FindDevice(vars["id"])

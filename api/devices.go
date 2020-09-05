@@ -50,7 +50,8 @@ func (c *apiContext) registerDevice(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&param)
 	if err == nil {
 		d := convert(param)
-		if c.registry.AddDevice(d) {
+		err = c.registry.AddDevice(d)
+		if err == nil {
 			w.WriteHeader(http.StatusCreated)
 			return
 		}
@@ -94,8 +95,8 @@ type deviceID struct {
 //   404:
 func (c *apiContext) unregisterDevice(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	found := c.registry.RemoveDevice(vars["id"])
-	if found {
+	err := c.registry.RemoveDevice(vars["id"])
+	if err == nil {
 		w.WriteHeader(http.StatusNoContent)
 	} else {
 		http.NotFound(w, r)
@@ -134,8 +135,8 @@ func (c *apiContext) updateDevice(w http.ResponseWriter, r *http.Request) {
 //   404:
 func (c *apiContext) findDevice(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	d, found := c.registry.FindDevice(vars["id"])
-	if found {
+	d, err := c.registry.FindDevice(vars["id"])
+	if err == nil {
 		w.Header().Add("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(d)
 	} else {

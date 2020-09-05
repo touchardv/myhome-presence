@@ -13,6 +13,12 @@ import (
 	"github.com/touchardv/myhome-presence/config"
 )
 
+var (
+	ErrNotFound       = errors.New("Device not found")
+	ErrInvalidID      = errors.New("Invalid device identifier")
+	ErrIDAlreadyTaken = errors.New("Device identifier already taken")
+)
+
 // Registry maintains the status of all tracked devices
 // together with their presence status.
 type Registry struct {
@@ -41,27 +47,24 @@ func NewRegistry(cfg config.Config) *Registry {
 }
 
 // AddDevice adds a new device to the registry.
-func (r *Registry) AddDevice(d config.Device) bool {
+func (r *Registry) AddDevice(d config.Device) error {
 	if len(strings.TrimSpace(d.Identifier)) == 0 {
-		log.Warn("Could not add device: identifier is empty/blank")
-		return false
+		return ErrInvalidID
 	}
-	if _, ok := r.devices[d.Identifier]; ok {
-		log.Warn("Could not add device: identifier '", d.Identifier, "' already is use")
-		return false
+	if _, found := r.devices[d.Identifier]; found {
+		return ErrIDAlreadyTaken
 	}
 	log.Info("Device added: ", d.Identifier)
 	r.devices[d.Identifier] = &d
-	return true
+	return nil
 }
 
 // FindDevice lookups a device given its identifier.
-func (r *Registry) FindDevice(id string) (config.Device, bool) {
-	if d, ok := r.devices[id]; ok {
-		return *d, true
+func (r *Registry) FindDevice(id string) (config.Device, error) {
+	if d, found := r.devices[id]; found {
+		return *d, nil
 	}
-	log.Warn("Could not find device with identifier: ", id)
-	return config.Device{}, false
+	return config.Device{}, ErrNotFound
 }
 
 // GetDevices returns all known devices.
@@ -206,14 +209,13 @@ func (r *Registry) pingMissingDevices(presence chan string) {
 }
 
 // RemoveDevice removes a device.
-func (r *Registry) RemoveDevice(id string) bool {
-	if _, ok := r.devices[id]; ok {
+func (r *Registry) RemoveDevice(id string) error {
+	if _, found := r.devices[id]; found {
 		delete(r.devices, id)
 		log.Info("Device removed: ", id)
-		return true
+		return nil
 	}
-	log.Warn("Could not find device with identifier: ", id)
-	return false
+	return ErrNotFound
 }
 
 // Start activates the tracking of devices.
@@ -254,14 +256,14 @@ func (r *Registry) Stop() {
 func (r *Registry) UpdateDevice(id string, ud config.Device) (config.Device, error) {
 	d, found := r.devices[id]
 	if !found {
-		return config.Device{}, errors.New("Device not found: " + id)
+		return config.Device{}, ErrNotFound
 	}
 	if len(strings.TrimSpace(ud.Identifier)) == 0 {
-		return config.Device{}, errors.New("Device id can not be empty/blank")
+		return config.Device{}, ErrInvalidID
 	}
 	if id != ud.Identifier {
 		if _, found := r.devices[ud.Identifier]; found {
-			return config.Device{}, errors.New("Device id is already taken")
+			return config.Device{}, ErrIDAlreadyTaken
 		}
 		r.devices[ud.Identifier] = d
 		delete(r.devices, id)

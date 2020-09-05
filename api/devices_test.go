@@ -94,8 +94,8 @@ func TestUpdateDevice(t *testing.T) {
 	response = performRequest(server, req)
 	assert.Equal(t, http.StatusOK, response.Code)
 
-	d, found := registry.FindDevice("foo")
-	assert.True(t, found)
+	d, err := registry.FindDevice("foo")
+	assert.Nil(t, err)
 	assert.Equal(t, "new foo", d.Description)
 }
 

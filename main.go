@@ -28,7 +28,7 @@ func main() {
 	bluetooth.EnableTracker()
 	ipv4.EnableTracker()
 	registry := device.NewRegistry(config)
-	server := api.NewServer(registry)
+	server := api.NewServer(config.Server, registry)
 	registry.Start()
 	server.Start()
 

@@ -15,7 +15,7 @@ import (
 func TestDeviceRegistration(t *testing.T) {
 	devices := make(map[string]*config.Device, 0)
 	registry := device.NewRegistry(config.Config{Devices: devices})
-	server := NewServer(registry)
+	server := NewServer(config.Server{}, registry)
 
 	var jsonStr = []byte(`{}`)
 	req, _ := http.NewRequest("POST", "/api/devices", bytes.NewBuffer(jsonStr))
@@ -33,7 +33,7 @@ func TestFindDevice(t *testing.T) {
 	devices := make(map[string]*config.Device, 0)
 	devices["foo"] = &config.Device{Identifier: "foo"}
 	registry := device.NewRegistry(config.Config{Devices: devices})
-	server := NewServer(registry)
+	server := NewServer(config.Server{}, registry)
 
 	req, _ := http.NewRequest("GET", "/api/devices/bar", nil)
 	response := performRequest(server, req)
@@ -52,7 +52,7 @@ func TestListDevices(t *testing.T) {
 	devices := make(map[string]*config.Device, 0)
 
 	registry := device.NewRegistry(config.Config{Devices: devices})
-	server := NewServer(registry)
+	server := NewServer(config.Server{}, registry)
 
 	req, _ := http.NewRequest("GET", "/api/devices", nil)
 	response := performRequest(server, req)
@@ -67,7 +67,7 @@ func TestUnregisterDevice(t *testing.T) {
 	devices := make(map[string]*config.Device, 0)
 	devices["foo"] = &config.Device{Identifier: "foo"}
 	registry := device.NewRegistry(config.Config{Devices: devices})
-	server := NewServer(registry)
+	server := NewServer(config.Server{}, registry)
 
 	req, _ := http.NewRequest("DELETE", "/api/devices/bar", nil)
 	response := performRequest(server, req)
@@ -83,7 +83,7 @@ func TestUpdateDevice(t *testing.T) {
 	devices := make(map[string]*config.Device, 0)
 	devices["foo"] = &config.Device{Identifier: "foo", Description: "old foo"}
 	registry := device.NewRegistry(config.Config{Devices: devices})
-	server := NewServer(registry)
+	server := NewServer(config.Server{}, registry)
 
 	jsonStr := []byte(`{"identifier": "foo", "description": "new foo"}`)
 	req, _ := http.NewRequest("PUT", "/api/devices/bar", bytes.NewBuffer(jsonStr))

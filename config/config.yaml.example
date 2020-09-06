@@ -26,6 +26,11 @@ mqtt_server:
   port: 1883
   topic: foo/bar
 
+server:
+  address: 0.0.0.0
+  port: 8080
+  swagger_ui_url: https://validator.swagger.io/
+
 trackers:
 - ipv4
 - bluetooth

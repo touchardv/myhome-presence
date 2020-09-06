@@ -2,12 +2,14 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
+	"github.com/touchardv/myhome-presence/config"
 	"github.com/touchardv/myhome-presence/device"
 	"github.com/touchardv/myhome-presence/docs"
 )
@@ -25,7 +27,7 @@ type Server struct {
 }
 
 // NewServer creates and initializes a new API server.
-func NewServer(r *device.Registry) *Server {
+func NewServer(cfg config.Server, r *device.Registry) *Server {
 	apiContext := apiContext{r}
 	router := mux.NewRouter()
 
@@ -44,7 +46,7 @@ func NewServer(r *device.Registry) *Server {
 	router.HandleFunc("/api/devices", apiContext.listDevices).Methods("GET")
 
 	server := &http.Server{
-		Addr:         "0.0.0.0:8080",
+		Addr:         fmt.Sprintf("%s:%d", cfg.Address, cfg.Port),
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 		IdleTimeout:  60 * time.Second,

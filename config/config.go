@@ -22,10 +22,18 @@ type MQTT struct {
 	Topic    string
 }
 
+// Server contains the local web server configuration.
+type Server struct {
+	Address      string `yaml:"address"`
+	Port         uint   `yaml:"port"`
+	SwaggerUIURL string `yaml:"swagger_ui_url"`
+}
+
 // Config contains the list of all devices to be tracked.
 type Config struct {
 	Devices    map[string]*Device `yaml:"devices"`
 	MQTTServer MQTT               `yaml:"mqtt_server"`
+	Server     Server             `yaml:"server"`
 	Trackers   []string           `yaml:"trackers"`
 	location   string             `yaml:"-"`
 }

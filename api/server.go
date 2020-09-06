@@ -37,6 +37,8 @@ func NewServer(cfg config.Server, r *device.Registry) *Server {
 		handlers.AllowedMethods([]string{"DELETE", "GET", "POST", "PUT"}),
 		handlers.AllowCredentials())
 
+	url := fmt.Sprintf("%s/?url=http://localhost:%d/api/docs", cfg.SwaggerUIURL, cfg.Port)
+	router.Handle("/", http.RedirectHandler(url, http.StatusPermanentRedirect)).Methods("GET")
 	router.HandleFunc("/health-check", healthCheck).Methods("GET")
 	router.HandleFunc("/api/docs", docs.GetSwaggerDocument).Methods("GET")
 	router.HandleFunc("/api/devices", apiContext.registerDevice).Methods("POST")

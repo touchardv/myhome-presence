@@ -1,14 +1,22 @@
 package device
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
+	"strings"
 	"sync"
 	"time"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	log "github.com/sirupsen/logrus"
 	"github.com/touchardv/myhome-presence/config"
+)
+
+var (
+	ErrNotFound       = errors.New("Device not found")
+	ErrInvalidID      = errors.New("Invalid device identifier")
+	ErrIDAlreadyTaken = errors.New("Device identifier already taken")
 )
 
 // Registry maintains the status of all tracked devices
@@ -38,16 +46,28 @@ func NewRegistry(cfg config.Config) *Registry {
 	}
 }
 
-// FindDevice lookups a device given its identifier.
-func (r *Registry) FindDevice(id string) (config.Device, bool) {
-	if d, ok := r.devices[id]; ok {
-		return *d, true
+// AddDevice adds a new device to the registry.
+func (r *Registry) AddDevice(d config.Device) error {
+	if len(strings.TrimSpace(d.Identifier)) == 0 {
+		return ErrInvalidID
 	}
-	log.Warn("Could not find device with identifier: ", id)
-	return config.Device{}, false
+	if _, found := r.devices[d.Identifier]; found {
+		return ErrIDAlreadyTaken
+	}
+	log.Info("Device added: ", d.Identifier)
+	r.devices[d.Identifier] = &d
+	return nil
 }
 
-// GetDevices returns all tracked devices.
+// FindDevice lookups a device given its identifier.
+func (r *Registry) FindDevice(id string) (config.Device, error) {
+	if d, found := r.devices[id]; found {
+		return *d, nil
+	}
+	return config.Device{}, ErrNotFound
+}
+
+// GetDevices returns all known devices.
 func (r *Registry) GetDevices() []config.Device {
 	devices := make([]config.Device, 0)
 	for _, d := range r.devices {
@@ -188,6 +208,16 @@ func (r *Registry) pingMissingDevices(presence chan string) {
 	}
 }
 
+// RemoveDevice removes a device.
+func (r *Registry) RemoveDevice(id string) error {
+	if _, found := r.devices[id]; found {
+		delete(r.devices, id)
+		log.Info("Device removed: ", id)
+		return nil
+	}
+	return ErrNotFound
+}
+
 // Start activates the tracking of devices.
 func (r *Registry) Start() {
 	log.Info("Starting: registry")
@@ -220,4 +250,26 @@ func (r *Registry) Stop() {
 	r.waitGroup.Wait()
 	r.disconnect()
 	log.Info("Stopped: registry")
+}
+
+// UpdateDevice updates an existing device.
+func (r *Registry) UpdateDevice(id string, ud config.Device) (config.Device, error) {
+	d, found := r.devices[id]
+	if !found {
+		return config.Device{}, ErrNotFound
+	}
+	if len(strings.TrimSpace(ud.Identifier)) == 0 {
+		return config.Device{}, ErrInvalidID
+	}
+	if id != ud.Identifier {
+		if _, found := r.devices[ud.Identifier]; found {
+			return config.Device{}, ErrIDAlreadyTaken
+		}
+		r.devices[ud.Identifier] = d
+		delete(r.devices, id)
+		log.Infof("Device '%s' renamed to '%s'", id, ud.Identifier)
+	}
+
+	*d = ud
+	return *d, nil
 }

@@ -11,8 +11,8 @@ import (
 
 // IPInterface represents one IP device interface.
 type IPInterface struct {
-	IPAddress  string `yaml:"ip_address"`
-	MACAddress string `yaml:"mac_address"`
+	IPAddress  string `json:"ip_address" yaml:"ip_address"`
+	MACAddress string `json:"mac_address" yaml:"mac_address"`
 }
 
 // MQTT contains the MQTT server connection information.

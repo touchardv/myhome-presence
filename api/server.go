@@ -32,7 +32,7 @@ func NewServer(r *device.Registry) *Server {
 	cors := handlers.CORS(
 		handlers.AllowedHeaders([]string{"content-type"}),
 		handlers.AllowedOrigins([]string{"*"}),
-		handlers.AllowedMethods([]string{"DELETE", "GET", "POST"}),
+		handlers.AllowedMethods([]string{"DELETE", "GET", "POST", "PUT"}),
 		handlers.AllowCredentials())
 
 	router.HandleFunc("/health-check", healthCheck).Methods("GET")

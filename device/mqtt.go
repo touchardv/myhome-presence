@@ -28,18 +28,27 @@ func mqttClientID() string {
 }
 
 func (r *Registry) connect() {
+	if r.mqttClient == nil {
+		return
+	}
 	if token := r.mqttClient.Connect(); token.Wait() && token.Error() != nil {
 		log.Error(token.Error())
 	}
 }
 
 func (r *Registry) disconnect() {
+	if r.mqttClient == nil {
+		return
+	}
 	if r.mqttClient.IsConnected() {
 		r.mqttClient.Disconnect(500)
 	}
 }
 
 func (r *Registry) publishPresence(d *config.Device) {
+	if r.mqttClient == nil {
+		return
+	}
 	bytes, err := json.Marshal(d)
 	if err == nil {
 		r.mqttClient.Publish(r.mqttTopic, 0, false, bytes)

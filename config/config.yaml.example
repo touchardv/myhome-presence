@@ -22,6 +22,7 @@ devices:
     bt_address: AA:BB:CC:DD:EE
 
 mqtt_server:
+  enabled: false
   hostname: 192.10.20.1
   port: 1883
   topic: foo/bar

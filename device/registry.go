@@ -37,10 +37,14 @@ func NewRegistry(cfg config.Config) *Registry {
 	for _, name := range cfg.Trackers {
 		trackers = append(trackers, newTracker(name))
 	}
+	var mqttClient MQTT.Client
+	if cfg.MQTTServer.Enabled {
+		mqttClient = newMQTTClient(cfg.MQTTServer)
+	}
 	return &Registry{
 		devices:    devices,
 		trackers:   trackers,
-		mqttClient: newMQTTClient(cfg.MQTTServer),
+		mqttClient: mqttClient,
 		mqttTopic:  cfg.MQTTServer.Topic,
 		stopping:   make(chan struct{}),
 	}

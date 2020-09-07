@@ -17,6 +17,7 @@ type IPInterface struct {
 
 // MQTT contains the MQTT server connection information.
 type MQTT struct {
+	Enabled  bool
 	Hostname string
 	Port     uint
 	Topic    string

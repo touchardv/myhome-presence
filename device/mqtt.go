@@ -4,12 +4,20 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/touchardv/myhome-presence/config"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	log "github.com/sirupsen/logrus"
 )
+
+type payload struct {
+	Description string    `json:"description"`
+	Identifier  string    `json:"identifier"`
+	Present     bool      `json:"present"`
+	LastSeenAt  time.Time `json:"last_seen_at"`
+}
 
 func newMQTTClient(c config.MQTT) MQTT.Client {
 	server := fmt.Sprintf("tcp://%s:%d", c.Hostname, c.Port)
@@ -49,7 +57,13 @@ func (r *Registry) publishPresence(d *config.Device) {
 	if r.mqttClient == nil {
 		return
 	}
-	bytes, err := json.Marshal(d)
+	data := payload{
+		Description: d.Description,
+		Identifier:  d.Identifier,
+		Present:     d.Present,
+		LastSeenAt:  d.LastSeenAt,
+	}
+	bytes, err := json.Marshal(data)
 	if err == nil {
 		r.mqttClient.Publish(r.mqttTopic, 0, false, bytes)
 	} else {

@@ -12,6 +12,19 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+type eventType uint
+
+const (
+	typeAdded eventType = iota
+	typePresenceUpdated
+	typeRemoved
+)
+
+type deviceEvent struct {
+	Type eventType   `json:"type"`
+	Data interface{} `json:"data"`
+}
+
 type deviceAdded struct {
 	Description string    `json:"description"`
 	Identifier  string    `json:"identifier"`
@@ -64,7 +77,7 @@ func (r *Registry) disconnect() {
 }
 
 func (r *Registry) onAdded(d *config.Device) {
-	r.publish(deviceAdded{
+	r.publish(typeAdded, deviceAdded{
 		Description: d.Description,
 		Identifier:  d.Identifier,
 		Present:     d.Present,
@@ -73,7 +86,7 @@ func (r *Registry) onAdded(d *config.Device) {
 }
 
 func (r *Registry) onPresenceUpdated(d *config.Device) {
-	r.publish(devicePresenceUpdated{
+	r.publish(typePresenceUpdated, devicePresenceUpdated{
 		Identifier: d.Identifier,
 		Present:    d.Present,
 		LastSeenAt: d.LastSeenAt,
@@ -81,16 +94,16 @@ func (r *Registry) onPresenceUpdated(d *config.Device) {
 }
 
 func (r *Registry) onRemoved(id string) {
-	r.publish(deviceRemoved{
+	r.publish(typeRemoved, deviceRemoved{
 		Identifier: id,
 	})
 }
 
-func (r *Registry) publish(data interface{}) {
+func (r *Registry) publish(t eventType, data interface{}) {
 	if r.mqttClient == nil {
 		return
 	}
-	bytes, err := json.Marshal(data)
+	bytes, err := json.Marshal(deviceEvent{Type: t, Data: data})
 	if err == nil {
 		r.mqttClient.Publish(r.mqttTopic, 0, false, bytes)
 	} else {

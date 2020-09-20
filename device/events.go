@@ -12,11 +12,34 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type payload struct {
+type eventType uint
+
+const (
+	typeAdded eventType = iota
+	typePresenceUpdated
+	typeRemoved
+)
+
+type deviceEvent struct {
+	Type eventType   `json:"type"`
+	Data interface{} `json:"data"`
+}
+
+type deviceAdded struct {
 	Description string    `json:"description"`
 	Identifier  string    `json:"identifier"`
 	Present     bool      `json:"present"`
 	LastSeenAt  time.Time `json:"last_seen_at"`
+}
+
+type devicePresenceUpdated struct {
+	Identifier string    `json:"identifier"`
+	Present    bool      `json:"present"`
+	LastSeenAt time.Time `json:"last_seen_at"`
+}
+
+type deviceRemoved struct {
+	Identifier string `json:"identifier"`
 }
 
 func newMQTTClient(c config.MQTT) MQTT.Client {
@@ -30,9 +53,9 @@ func newMQTTClient(c config.MQTT) MQTT.Client {
 func mqttClientID() string {
 	hostname, err := os.Hostname()
 	if err != nil {
-		return "unknown"
+		hostname = "unknown"
 	}
-	return hostname
+	return fmt.Sprintf("%s-%d", hostname, os.Getpid())
 }
 
 func (r *Registry) connect() {
@@ -53,17 +76,34 @@ func (r *Registry) disconnect() {
 	}
 }
 
-func (r *Registry) publishPresence(d *config.Device) {
-	if r.mqttClient == nil {
-		return
-	}
-	data := payload{
+func (r *Registry) onAdded(d *config.Device) {
+	r.publish(typeAdded, deviceAdded{
 		Description: d.Description,
 		Identifier:  d.Identifier,
 		Present:     d.Present,
 		LastSeenAt:  d.LastSeenAt,
+	})
+}
+
+func (r *Registry) onPresenceUpdated(d *config.Device) {
+	r.publish(typePresenceUpdated, devicePresenceUpdated{
+		Identifier: d.Identifier,
+		Present:    d.Present,
+		LastSeenAt: d.LastSeenAt,
+	})
+}
+
+func (r *Registry) onRemoved(id string) {
+	r.publish(typeRemoved, deviceRemoved{
+		Identifier: id,
+	})
+}
+
+func (r *Registry) publish(t eventType, data interface{}) {
+	if r.mqttClient == nil {
+		return
 	}
-	bytes, err := json.Marshal(data)
+	bytes, err := json.Marshal(deviceEvent{Type: t, Data: data})
 	if err == nil {
 		r.mqttClient.Publish(r.mqttTopic, 0, false, bytes)
 	} else {

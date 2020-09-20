@@ -12,11 +12,21 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type payload struct {
+type deviceAdded struct {
 	Description string    `json:"description"`
 	Identifier  string    `json:"identifier"`
 	Present     bool      `json:"present"`
 	LastSeenAt  time.Time `json:"last_seen_at"`
+}
+
+type devicePresenceUpdated struct {
+	Identifier string    `json:"identifier"`
+	Present    bool      `json:"present"`
+	LastSeenAt time.Time `json:"last_seen_at"`
+}
+
+type deviceRemoved struct {
+	Identifier string `json:"identifier"`
 }
 
 func newMQTTClient(c config.MQTT) MQTT.Client {
@@ -53,15 +63,32 @@ func (r *Registry) disconnect() {
 	}
 }
 
-func (r *Registry) publishPresence(d *config.Device) {
-	if r.mqttClient == nil {
-		return
-	}
-	data := payload{
+func (r *Registry) onAdded(d *config.Device) {
+	r.publish(deviceAdded{
 		Description: d.Description,
 		Identifier:  d.Identifier,
 		Present:     d.Present,
 		LastSeenAt:  d.LastSeenAt,
+	})
+}
+
+func (r *Registry) onPresenceUpdated(d *config.Device) {
+	r.publish(devicePresenceUpdated{
+		Identifier: d.Identifier,
+		Present:    d.Present,
+		LastSeenAt: d.LastSeenAt,
+	})
+}
+
+func (r *Registry) onRemoved(id string) {
+	r.publish(deviceRemoved{
+		Identifier: id,
+	})
+}
+
+func (r *Registry) publish(data interface{}) {
+	if r.mqttClient == nil {
+		return
 	}
 	bytes, err := json.Marshal(data)
 	if err == nil {

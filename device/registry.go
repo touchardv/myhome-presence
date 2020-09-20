@@ -58,8 +58,9 @@ func (r *Registry) AddDevice(d config.Device) error {
 	if _, found := r.devices[d.Identifier]; found {
 		return ErrIDAlreadyTaken
 	}
-	log.Info("Device added: ", d.Identifier)
 	r.devices[d.Identifier] = &d
+	r.onAdded(&d)
+	log.Info("Device added: ", d.Identifier)
 	return nil
 }
 
@@ -98,7 +99,7 @@ func (r *Registry) handle(scan chan ScanResult, presence chan string) {
 				d.Present = true
 			}
 			d.LastSeenAt = time.Now()
-			r.publishPresence(d)
+			r.onPresenceUpdated(d)
 			break
 
 		case identifier := <-presence:
@@ -108,7 +109,7 @@ func (r *Registry) handle(scan chan ScanResult, presence chan string) {
 					d.Present = true
 				}
 				d.LastSeenAt = time.Now()
-				r.publishPresence(d)
+				r.onPresenceUpdated(d)
 			} else {
 				log.Warn("Unknown device: ", identifier)
 			}
@@ -134,6 +135,7 @@ func (r *Registry) newDevice(sr ScanResult) *config.Device {
 		d.IPInterfaces["unknown"] = config.IPInterface{IPAddress: sr.Value}
 	}
 	r.devices[d.Identifier] = &d
+	r.onAdded(&d)
 	log.Info("Discovered a new device: ", d.Identifier)
 	return &d
 }
@@ -203,9 +205,9 @@ func (r *Registry) pingMissingDevices(presence chan string) {
 				d := r.devices[m.Identifier]
 				elapsedMinutes := now.Sub(d.LastSeenAt).Minutes()
 				if d.Present && elapsedMinutes > 10 {
-					log.Info("Device '", d.Description, "' is not present")
 					d.Present = false
-					r.publishPresence(d)
+					r.onPresenceUpdated(d)
+					log.Info("Device '", d.Description, "' is not present")
 				}
 			}
 		}
@@ -216,6 +218,7 @@ func (r *Registry) pingMissingDevices(presence chan string) {
 func (r *Registry) RemoveDevice(id string) error {
 	if _, found := r.devices[id]; found {
 		delete(r.devices, id)
+		r.onRemoved(id)
 		log.Info("Device removed: ", id)
 		return nil
 	}

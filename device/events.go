@@ -53,9 +53,9 @@ func newMQTTClient(c config.MQTT) MQTT.Client {
 func mqttClientID() string {
 	hostname, err := os.Hostname()
 	if err != nil {
-		return "unknown"
+		hostname = "unknown"
 	}
-	return hostname
+	return fmt.Sprintf("%s-%d", hostname, os.Getpid())
 }
 
 func (r *Registry) connect() {

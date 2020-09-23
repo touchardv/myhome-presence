@@ -10,10 +10,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/touchardv/myhome-presence/config"
 	"github.com/touchardv/myhome-presence/device"
+	"github.com/touchardv/myhome-presence/model"
 )
 
 func TestDeviceRegistration(t *testing.T) {
-	devices := make(map[string]*config.Device, 0)
+	devices := make(map[string]*model.Device, 0)
 	registry := device.NewRegistry(config.Config{Devices: devices})
 	server := NewServer(config.Server{}, registry)
 
@@ -30,8 +31,8 @@ func TestDeviceRegistration(t *testing.T) {
 }
 
 func TestFindDevice(t *testing.T) {
-	devices := make(map[string]*config.Device, 0)
-	devices["foo"] = &config.Device{Identifier: "foo"}
+	devices := make(map[string]*model.Device, 0)
+	devices["foo"] = &model.Device{Identifier: "foo"}
 	registry := device.NewRegistry(config.Config{Devices: devices})
 	server := NewServer(config.Server{}, registry)
 
@@ -49,7 +50,7 @@ func TestFindDevice(t *testing.T) {
 }
 
 func TestListDevices(t *testing.T) {
-	devices := make(map[string]*config.Device, 0)
+	devices := make(map[string]*model.Device, 0)
 
 	registry := device.NewRegistry(config.Config{Devices: devices})
 	server := NewServer(config.Server{}, registry)
@@ -64,8 +65,8 @@ func TestListDevices(t *testing.T) {
 }
 
 func TestUnregisterDevice(t *testing.T) {
-	devices := make(map[string]*config.Device, 0)
-	devices["foo"] = &config.Device{Identifier: "foo"}
+	devices := make(map[string]*model.Device, 0)
+	devices["foo"] = &model.Device{Identifier: "foo"}
 	registry := device.NewRegistry(config.Config{Devices: devices})
 	server := NewServer(config.Server{}, registry)
 
@@ -80,8 +81,8 @@ func TestUnregisterDevice(t *testing.T) {
 }
 
 func TestUpdateDevice(t *testing.T) {
-	devices := make(map[string]*config.Device, 0)
-	devices["foo"] = &config.Device{Identifier: "foo", Description: "old foo"}
+	devices := make(map[string]*model.Device, 0)
+	devices["foo"] = &model.Device{Identifier: "foo", Description: "old foo"}
 	registry := device.NewRegistry(config.Config{Devices: devices})
 	server := NewServer(config.Server{}, registry)
 

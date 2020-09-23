@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/touchardv/myhome-presence/config"
+	"github.com/touchardv/myhome-presence/model"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	log "github.com/sirupsen/logrus"
@@ -76,7 +77,7 @@ func (r *Registry) disconnect() {
 	}
 }
 
-func (r *Registry) onAdded(d *config.Device) {
+func (r *Registry) onAdded(d *model.Device) {
 	r.publish(typeAdded, deviceAdded{
 		Description: d.Description,
 		Identifier:  d.Identifier,
@@ -85,7 +86,7 @@ func (r *Registry) onAdded(d *config.Device) {
 	})
 }
 
-func (r *Registry) onPresenceUpdated(d *config.Device) {
+func (r *Registry) onPresenceUpdated(d *model.Device) {
 	r.publish(typePresenceUpdated, devicePresenceUpdated{
 		Identifier: d.Identifier,
 		Present:    d.Present,

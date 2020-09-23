@@ -6,13 +6,14 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/touchardv/myhome-presence/config"
+	"github.com/touchardv/myhome-presence/model"
 )
 
-var device = config.Device{
+var device = model.Device{
 	Description: "dummy",
 	BLEAddress:  "BLE",
 	BTAddress:   "BT",
-	IPInterfaces: map[string]config.IPInterface{
+	IPInterfaces: map[string]model.IPInterface{
 		"ethernet": {
 			IPAddress: "1.2.3.4",
 		},
@@ -21,7 +22,7 @@ var device = config.Device{
 }
 
 var cfg = config.Config{
-	Devices: map[string]*config.Device{"foo": &device},
+	Devices: map[string]*model.Device{"foo": &device},
 }
 
 type dummyTracker struct {
@@ -39,7 +40,7 @@ func (t *dummyTracker) Scan(existence chan ScanResult, stopping chan struct{}) {
 	t.scanCount++
 }
 
-func (t *dummyTracker) Ping(devices map[string]config.Device, presence chan string) {
+func (t *dummyTracker) Ping(devices map[string]model.Device, presence chan string) {
 	t.pingCount++
 }
 
@@ -84,7 +85,7 @@ func TestHandleDevicePresence(t *testing.T) {
 }
 
 func TestHandleNewDevice(t *testing.T) {
-	registry := NewRegistry(config.Config{Devices: map[string]*config.Device{}})
+	registry := NewRegistry(config.Config{Devices: map[string]*model.Device{}})
 
 	existence := make(chan ScanResult)
 	presence := make(chan string)
@@ -104,7 +105,7 @@ func TestHandleNewDevice(t *testing.T) {
 	assert.True(t, devices[0].Present)
 	assert.False(t, devices[0].LastSeenAt.IsZero())
 	assert.Equal(t, "12:34:56:78:90", devices[0].BLEAddress)
-	assert.Equal(t, config.Discovered, devices[0].Status)
+	assert.Equal(t, model.StatusDiscovered, devices[0].Status)
 }
 
 func TestNewDevice(t *testing.T) {
@@ -115,7 +116,7 @@ func TestNewDevice(t *testing.T) {
 	assert.Equal(t, 2, len(devices))
 	assert.NotEmpty(t, d.Identifier, d.Description)
 	assert.Equal(t, d.BLEAddress, "one")
-	assert.Equal(t, config.Discovered, d.Status)
+	assert.Equal(t, model.StatusDiscovered, d.Status)
 
 	d = registry.newDevice(ScanResult{ID: BTAddress, Value: "two"})
 	assert.Equal(t, d.BTAddress, "two")
@@ -145,9 +146,9 @@ func TestLookupDevice(t *testing.T) {
 }
 
 func TestPingMissingDevices(t *testing.T) {
-	device := config.Device{Identifier: "foo", Status: config.Undefined}
+	device := model.Device{Identifier: "foo", Status: model.StatusUndefined}
 	registry := NewRegistry(config.Config{
-		Devices:  map[string]*config.Device{"foo": &device},
+		Devices:  map[string]*model.Device{"foo": &device},
 		Trackers: []string{"dummy"},
 	})
 	presence := make(chan string)
@@ -157,7 +158,7 @@ func TestPingMissingDevices(t *testing.T) {
 	assert.Equal(t, 0, tracker.pingCount)
 
 	// No ping: device is present and seen less than 5 minutes ago
-	device.Status = config.Tracked
+	device.Status = model.StatusTracked
 	device.LastSeenAt = time.Now().Add(-3 * time.Minute)
 	device.Present = true
 	registry.pingMissingDevices(presence)

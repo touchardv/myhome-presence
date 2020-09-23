@@ -6,9 +6,9 @@ import (
 	"net/http"
 
 	"github.com/touchardv/myhome-presence/device"
+	"github.com/touchardv/myhome-presence/model"
 
 	"github.com/gorilla/mux"
-	"github.com/touchardv/myhome-presence/config"
 )
 
 // swagger:parameters registerDevice updateDevice
@@ -63,16 +63,16 @@ func (c *apiContext) registerDevice(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusBadRequest)
 }
 
-func convert(p deviceParameter) config.Device {
-	d := config.Device{
+func convert(p deviceParameter) model.Device {
+	d := model.Device{
 		Description:  p.Description,
 		Identifier:   p.Identifier,
 		BLEAddress:   p.BLEAddress,
 		BTAddress:    p.BTAddress,
-		IPInterfaces: make(map[string]config.IPInterface, len(p.IPInterfaces)),
+		IPInterfaces: make(map[string]model.IPInterface, len(p.IPInterfaces)),
 	}
 	for name, itf := range p.IPInterfaces {
-		d.IPInterfaces[name] = config.IPInterface{
+		d.IPInterfaces[name] = model.IPInterface{
 			IPAddress:  itf.IPAddress,
 			MACAddress: itf.MACAddress,
 		}
@@ -153,7 +153,7 @@ func (c *apiContext) findDevice(w http.ResponseWriter, r *http.Request) {
 }
 
 // swagger:response deviceArray
-type deviceArray []config.Device
+type deviceArray []model.Device
 
 // swagger:route GET /devices devices listDevices
 //

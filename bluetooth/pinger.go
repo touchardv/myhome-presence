@@ -4,10 +4,10 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
-	"github.com/touchardv/myhome-presence/config"
+	"github.com/touchardv/myhome-presence/model"
 )
 
-func (t *btTracker) Ping(devices map[string]config.Device, presence chan string) {
+func (t *btTracker) Ping(devices map[string]model.Device, presence chan string) {
 	t.mux.Lock()
 	if t.scanning {
 		t.stopScanning()

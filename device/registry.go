@@ -11,6 +11,7 @@ import (
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	log "github.com/sirupsen/logrus"
 	"github.com/touchardv/myhome-presence/config"
+	"github.com/touchardv/myhome-presence/model"
 )
 
 var (
@@ -22,7 +23,7 @@ var (
 // Registry maintains the status of all tracked devices
 // together with their presence status.
 type Registry struct {
-	devices    map[string]*config.Device
+	devices    map[string]*model.Device
 	trackers   []Tracker
 	mqttClient MQTT.Client
 	mqttTopic  string
@@ -51,7 +52,7 @@ func NewRegistry(cfg config.Config) *Registry {
 }
 
 // AddDevice adds a new device to the registry.
-func (r *Registry) AddDevice(d config.Device) error {
+func (r *Registry) AddDevice(d model.Device) error {
 	if len(strings.TrimSpace(d.Identifier)) == 0 {
 		return ErrInvalidID
 	}
@@ -65,16 +66,16 @@ func (r *Registry) AddDevice(d config.Device) error {
 }
 
 // FindDevice lookups a device given its identifier.
-func (r *Registry) FindDevice(id string) (config.Device, error) {
+func (r *Registry) FindDevice(id string) (model.Device, error) {
 	if d, found := r.devices[id]; found {
 		return *d, nil
 	}
-	return config.Device{}, ErrNotFound
+	return model.Device{}, ErrNotFound
 }
 
 // GetDevices returns all known devices.
-func (r *Registry) GetDevices() []config.Device {
-	devices := make([]config.Device, 0)
+func (r *Registry) GetDevices() []model.Device {
+	devices := make([]model.Device, 0)
 	for _, d := range r.devices {
 		devices = append(devices, *d)
 	}
@@ -117,13 +118,13 @@ func (r *Registry) handle(scan chan ScanResult, presence chan string) {
 	}
 }
 
-func (r *Registry) newDevice(sr ScanResult) *config.Device {
+func (r *Registry) newDevice(sr ScanResult) *model.Device {
 	now := time.Now()
-	d := config.Device{
+	d := model.Device{
 		Description: fmt.Sprintf("Discovered device at %s", now.Format(time.RFC822)),
 		Identifier:  fmt.Sprintf("device-%d-%d", now.Unix(), rand.Intn(1000)),
 		Present:     false,
-		Status:      config.Discovered,
+		Status:      model.StatusDiscovered,
 	}
 	switch sr.ID {
 	case BLEAddress:
@@ -131,8 +132,8 @@ func (r *Registry) newDevice(sr ScanResult) *config.Device {
 	case BTAddress:
 		d.BTAddress = sr.Value
 	case IPAddress:
-		d.IPInterfaces = make(map[string]config.IPInterface)
-		d.IPInterfaces["unknown"] = config.IPInterface{IPAddress: sr.Value}
+		d.IPInterfaces = make(map[string]model.IPInterface)
+		d.IPInterfaces["unknown"] = model.IPInterface{IPAddress: sr.Value}
 	}
 	r.devices[d.Identifier] = &d
 	r.onAdded(&d)
@@ -140,7 +141,7 @@ func (r *Registry) newDevice(sr ScanResult) *config.Device {
 	return &d
 }
 
-func (r *Registry) lookupDevice(sr ScanResult) *config.Device {
+func (r *Registry) lookupDevice(sr ScanResult) *model.Device {
 	switch sr.ID {
 	case BLEAddress:
 		for _, d := range r.devices {
@@ -183,10 +184,10 @@ func (r *Registry) pingLoop(presence chan string) {
 }
 
 func (r *Registry) pingMissingDevices(presence chan string) {
-	missing := make(map[string]config.Device)
+	missing := make(map[string]model.Device)
 	now := time.Now()
 	for _, d := range r.devices {
-		if d.Status != config.Tracked {
+		if d.Status != model.StatusTracked {
 			continue
 		}
 		elapsedMinutes := now.Sub(d.LastSeenAt).Minutes()
@@ -260,17 +261,17 @@ func (r *Registry) Stop() {
 }
 
 // UpdateDevice updates an existing device.
-func (r *Registry) UpdateDevice(id string, ud config.Device) (config.Device, error) {
+func (r *Registry) UpdateDevice(id string, ud model.Device) (model.Device, error) {
 	d, found := r.devices[id]
 	if !found {
-		return config.Device{}, ErrNotFound
+		return model.Device{}, ErrNotFound
 	}
 	if len(strings.TrimSpace(ud.Identifier)) == 0 {
-		return config.Device{}, ErrInvalidID
+		return model.Device{}, ErrInvalidID
 	}
 	if id != ud.Identifier {
 		if _, found := r.devices[ud.Identifier]; found {
-			return config.Device{}, ErrIDAlreadyTaken
+			return model.Device{}, ErrIDAlreadyTaken
 		}
 		r.devices[ud.Identifier] = d
 		delete(r.devices, id)

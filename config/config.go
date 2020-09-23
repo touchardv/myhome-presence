@@ -7,13 +7,8 @@ import (
 	"gopkg.in/yaml.v2"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/touchardv/myhome-presence/model"
 )
-
-// IPInterface represents one IP device interface.
-type IPInterface struct {
-	IPAddress  string `json:"ip_address" yaml:"ip_address"`
-	MACAddress string `json:"mac_address" yaml:"mac_address"`
-}
 
 // MQTT contains the MQTT server connection information.
 type MQTT struct {
@@ -32,11 +27,11 @@ type Server struct {
 
 // Config contains the list of all devices to be tracked.
 type Config struct {
-	Devices    map[string]*Device `yaml:"devices"`
-	MQTTServer MQTT               `yaml:"mqtt_server"`
-	Server     Server             `yaml:"server"`
-	Trackers   []string           `yaml:"trackers"`
-	location   string             `yaml:"-"`
+	Devices    map[string]*model.Device `yaml:"devices"`
+	MQTTServer MQTT                     `yaml:"mqtt_server"`
+	Server     Server                   `yaml:"server"`
+	Trackers   []string                 `yaml:"trackers"`
+	location   string                   `yaml:"-"`
 }
 
 // DefaultLocation corresponds to the default path to the directory where
@@ -68,7 +63,7 @@ func retrieve(location string, name string) Config {
 			log.Fatal("Invalid configuration, the device identifier does not match: ", d.Identifier)
 		}
 		d.Identifier = id
-		d.Status = Tracked
+		d.Status = model.StatusTracked
 	}
 	return cfg
 }
@@ -89,6 +84,6 @@ func (cfg *Config) load(location string, name string) {
 }
 
 // Save persists the device list to disk.
-func (cfg *Config) Save(devices []Device) {
+func (cfg *Config) Save(devices []model.Device) {
 	save(devices, cfg.location, devicesFilename)
 }

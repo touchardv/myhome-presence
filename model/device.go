@@ -30,16 +30,24 @@ func (s Status) String() string {
 
 // IPInterface represents one IP device interface.
 type IPInterface struct {
-	IPAddress  string `json:"ip_address" yaml:"ip_address"`
+	// required: true
+	IPAddress string `json:"ip_address" yaml:"ip_address"`
+	// required: true
 	MACAddress string `json:"mac_address" yaml:"mac_address"`
 }
 
 // Device represents a single device that can be tracked.
 type Device struct {
-	Description  string                 `json:"description"`
-	Identifier   string                 `json:"identifier"`
-	BLEAddress   string                 `json:"ble_address" yaml:"ble_address"`
-	BTAddress    string                 `json:"bt_address" yaml:"bt_address"`
+	// example: My phone
+	Description string `json:"description"`
+	// example: my-phone
+	// required: true
+	Identifier string `json:"identifier"`
+	// example: AA:BB:CC:DD:EE
+	BLEAddress string `json:"ble_address" yaml:"ble_address"`
+	// example: AA:BB:CC:DD:EE
+	BTAddress string `json:"bt_address" yaml:"bt_address"`
+	// example: { "wifi": { "ip_address": "10.10.10.124", "mac_address": "AB:CD:EF:01:02:03" } }
 	IPInterfaces map[string]IPInterface `json:"ip_interfaces" yaml:"ip_interfaces"`
 	Status       Status                 `json:"status" yaml:"status"`
 	Present      bool                   `json:"present" yaml:"present"`

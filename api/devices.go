@@ -17,28 +17,7 @@ type deviceBodyParameter struct {
 	//
 	// in: body
 	// required: true
-	Device deviceParameter
-}
-
-type deviceParameter struct {
-	// example: My phone
-	Description string `json:"description"`
-	// example: my-phone
-	// required: true
-	Identifier string `json:"identifier"`
-	// example: AA:BB:CC:DD:EE
-	BLEAddress string `json:"ble_address"`
-	// example: AA:BB:CC:DD:EE
-	BTAddress string `json:"bt_address"`
-	// example: { "wifi": { "ip_address": "10.10.10.124", "mac_address": "AB:CD:EF:01:02:03" } }
-	IPInterfaces map[string]ipInterfaceParameter `json:"ip_interfaces"`
-}
-
-type ipInterfaceParameter struct {
-	// required: true
-	IPAddress string `json:"ip_address"`
-	// required: true
-	MACAddress string `json:"mac_address"`
+	Device model.Device
 }
 
 // swagger:route POST /devices devices registerDevice
@@ -49,10 +28,9 @@ type ipInterfaceParameter struct {
 //   201: description: Success
 //   400: description: Invalid parameters
 func (c *apiContext) registerDevice(w http.ResponseWriter, r *http.Request) {
-	param := deviceParameter{}
-	err := json.NewDecoder(r.Body).Decode(&param)
+	d := model.Device{}
+	err := json.NewDecoder(r.Body).Decode(&d)
 	if err == nil {
-		d := convert(param)
 		err = c.registry.AddDevice(d)
 		if err == nil {
 			w.WriteHeader(http.StatusCreated)
@@ -61,23 +39,6 @@ func (c *apiContext) registerDevice(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusBadRequest)
-}
-
-func convert(p deviceParameter) model.Device {
-	d := model.Device{
-		Description:  p.Description,
-		Identifier:   p.Identifier,
-		BLEAddress:   p.BLEAddress,
-		BTAddress:    p.BTAddress,
-		IPInterfaces: make(map[string]model.IPInterface, len(p.IPInterfaces)),
-	}
-	for name, itf := range p.IPInterfaces {
-		d.IPInterfaces[name] = model.IPInterface{
-			IPAddress:  itf.IPAddress,
-			MACAddress: itf.MACAddress,
-		}
-	}
-	return d
 }
 
 // swagger:parameters findDevice unregisterDevice updateDevice
@@ -116,10 +77,9 @@ func (c *apiContext) unregisterDevice(w http.ResponseWriter, r *http.Request) {
 //   404: description: Not found
 func (c *apiContext) updateDevice(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	param := deviceParameter{}
-	err := json.NewDecoder(r.Body).Decode(&param)
+	d := model.Device{}
+	err := json.NewDecoder(r.Body).Decode(&d)
 	if err == nil {
-		d := convert(param)
 		d, err = c.registry.UpdateDevice(vars["id"], d)
 		if err == nil {
 			w.Header().Add("Content-Type", "application/json")

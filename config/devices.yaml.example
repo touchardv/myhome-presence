@@ -3,7 +3,7 @@
   interfaces:
     - type: ble
       address: 9d329f8ba3c24ae0a494b195dda27d41
-  status: 2
+  status: ignored
   present: true
   last_seen_at: 2020-05-18T20:05:42.587258+02:00
 
@@ -14,6 +14,6 @@
       address: CC:AA:DD:FF:AA:BB
     - type: ipv4
       address: 10.1.2.3
-  status: 1
+  status: discovered
   present: true
   last_seen_at: 2020-05-18T20:05:42.587258+02:00

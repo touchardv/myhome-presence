@@ -82,7 +82,7 @@ func (r *Registry) GetDevices() []model.Device {
 	return devices
 }
 
-func (r *Registry) handle(scan chan ScanResult, presence chan string) {
+func (r *Registry) handle(scan chan model.Interface, presence chan string) {
 	log.Info("Starting: scan/presence handler")
 	for {
 		select {
@@ -118,49 +118,27 @@ func (r *Registry) handle(scan chan ScanResult, presence chan string) {
 	}
 }
 
-func (r *Registry) newDevice(sr ScanResult) *model.Device {
+func (r *Registry) newDevice(itf model.Interface) *model.Device {
 	now := time.Now()
 	d := model.Device{
 		Description: fmt.Sprintf("Discovered device at %s", now.Format(time.RFC822)),
 		Identifier:  fmt.Sprintf("device-%d-%d", now.Unix(), rand.Intn(1000)),
+		Interfaces:  make([]model.Interface, 1),
 		Present:     false,
 		Status:      model.StatusDiscovered,
 	}
-	switch sr.ID {
-	case BLEAddress:
-		d.BLEAddress = sr.Value
-	case BTAddress:
-		d.BTAddress = sr.Value
-	case IPAddress:
-		d.IPInterfaces = make(map[string]model.IPInterface)
-		d.IPInterfaces["unknown"] = model.IPInterface{IPAddress: sr.Value}
-	}
+	d.Interfaces[0] = itf
 	r.devices[d.Identifier] = &d
 	r.onAdded(&d)
 	log.Info("Discovered a new device: ", d.Identifier)
 	return &d
 }
 
-func (r *Registry) lookupDevice(sr ScanResult) *model.Device {
-	switch sr.ID {
-	case BLEAddress:
-		for _, d := range r.devices {
-			if d.BLEAddress == sr.Value {
+func (r *Registry) lookupDevice(itf model.Interface) *model.Device {
+	for _, d := range r.devices {
+		for _, di := range d.Interfaces {
+			if di.Type == itf.Type && di.Address == itf.Address {
 				return d
-			}
-		}
-	case BTAddress:
-		for _, d := range r.devices {
-			if d.BTAddress == sr.Value {
-				return d
-			}
-		}
-	case IPAddress:
-		for _, d := range r.devices {
-			for _, itf := range d.IPInterfaces {
-				if itf.IPAddress == sr.Value {
-					return d
-				}
 			}
 		}
 	}
@@ -230,7 +208,7 @@ func (r *Registry) RemoveDevice(id string) error {
 func (r *Registry) Start() {
 	log.Info("Starting: registry")
 	r.connect()
-	existence := make(chan ScanResult, 10)
+	existence := make(chan model.Interface, 10)
 	presence := make(chan string, 10)
 	go func() {
 		r.handle(existence, presence)

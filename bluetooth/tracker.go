@@ -5,6 +5,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/touchardv/myhome-presence/model"
+
 	"github.com/bettercap/gatt"
 	log "github.com/sirupsen/logrus"
 	"github.com/touchardv/myhome-presence/device"
@@ -18,7 +20,7 @@ func EnableTracker() {
 type btTracker struct {
 	device   gatt.Device
 	scanning bool
-	scan     chan device.ScanResult
+	scan     chan model.Interface
 	mux      sync.Mutex
 }
 
@@ -28,7 +30,7 @@ func newBTTracker() device.Tracker {
 	}
 }
 
-func (t *btTracker) Scan(scan chan device.ScanResult, stopping chan struct{}) {
+func (t *btTracker) Scan(scan chan model.Interface, stopping chan struct{}) {
 	log.Info("Starting: Bluetooth tracker")
 	t.scan = scan
 	t.startScanning()

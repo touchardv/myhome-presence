@@ -11,14 +11,12 @@ import (
 
 var device = model.Device{
 	Description: "dummy",
-	BLEAddress:  "BLE",
-	BTAddress:   "BT",
-	IPInterfaces: map[string]model.IPInterface{
-		"ethernet": {
-			IPAddress: "1.2.3.4",
-		},
+	Identifier:  "foo",
+	Interfaces: []model.Interface{
+		{Type: model.InterfaceBluetoothLowEnergy, Address: "BLE"},
+		{Type: model.InterfaceBluetooth, Address: "BT"},
+		{Type: model.InterfaceIPv4, Address: "1.2.3.4"},
 	},
-	Identifier: "foo",
 }
 
 var cfg = config.Config{
@@ -36,7 +34,7 @@ func newDummyTracker() Tracker {
 	return &tracker
 }
 
-func (t *dummyTracker) Scan(existence chan ScanResult, stopping chan struct{}) {
+func (t *dummyTracker) Scan(existence chan model.Interface, stopping chan struct{}) {
 	t.scanCount++
 }
 
@@ -64,7 +62,7 @@ func TestHandleDevicePresence(t *testing.T) {
 	assert.False(t, devices[0].Present)
 	assert.True(t, devices[0].LastSeenAt.IsZero())
 
-	existence := make(chan ScanResult)
+	existence := make(chan model.Interface)
 	presence := make(chan string)
 	done := make(chan struct{})
 	go func() {
@@ -87,14 +85,14 @@ func TestHandleDevicePresence(t *testing.T) {
 func TestHandleNewDevice(t *testing.T) {
 	registry := NewRegistry(config.Config{Devices: map[string]*model.Device{}})
 
-	existence := make(chan ScanResult)
+	existence := make(chan model.Interface)
 	presence := make(chan string)
 	done := make(chan struct{})
 	go func() {
 		registry.handle(existence, presence)
 		close(done)
 	}()
-	existence <- ScanResult{ID: BLEAddress, Value: "12:34:56:78:90"}
+	existence <- model.Interface{Type: model.InterfaceBluetoothLowEnergy, Address: "12:34:56:78:90"}
 
 	close(registry.stopping)
 	<-done
@@ -104,44 +102,48 @@ func TestHandleNewDevice(t *testing.T) {
 
 	assert.True(t, devices[0].Present)
 	assert.False(t, devices[0].LastSeenAt.IsZero())
-	assert.Equal(t, "12:34:56:78:90", devices[0].BLEAddress)
+	assert.Equal(t, model.InterfaceBluetoothLowEnergy, devices[0].Interfaces[0].Type)
+	assert.Equal(t, "12:34:56:78:90", devices[0].Interfaces[0].Address)
 	assert.Equal(t, model.StatusDiscovered, devices[0].Status)
 }
 
 func TestNewDevice(t *testing.T) {
 	registry := NewRegistry(cfg)
-	d := registry.newDevice(ScanResult{ID: BLEAddress, Value: "one"})
+	d := registry.newDevice(model.Interface{Type: model.InterfaceBluetoothLowEnergy, Address: "one"})
 
 	devices := registry.GetDevices()
 	assert.Equal(t, 2, len(devices))
 	assert.NotEmpty(t, d.Identifier, d.Description)
-	assert.Equal(t, d.BLEAddress, "one")
+	assert.Equal(t, model.InterfaceBluetoothLowEnergy, d.Interfaces[0].Type)
+	assert.Equal(t, "one", d.Interfaces[0].Address)
 	assert.Equal(t, model.StatusDiscovered, d.Status)
 
-	d = registry.newDevice(ScanResult{ID: BTAddress, Value: "two"})
-	assert.Equal(t, d.BTAddress, "two")
+	d = registry.newDevice(model.Interface{Type: model.InterfaceBluetooth, Address: "two"})
+	assert.Equal(t, model.InterfaceBluetooth, d.Interfaces[0].Type)
+	assert.Equal(t, "two", d.Interfaces[0].Address)
 
-	d = registry.newDevice(ScanResult{ID: IPAddress, Value: "three"})
-	assert.Equal(t, 1, len(d.IPInterfaces))
-	assert.Equal(t, d.IPInterfaces["unknown"].IPAddress, "three")
+	d = registry.newDevice(model.Interface{Type: model.InterfaceIPv4, Address: "three"})
+	assert.Equal(t, 1, len(d.Interfaces))
+	assert.Equal(t, model.InterfaceIPv4, d.Interfaces[0].Type)
+	assert.Equal(t, "three", d.Interfaces[0].Address)
 }
 
 func TestLookupDevice(t *testing.T) {
 	registry := NewRegistry(cfg)
 
-	d := registry.lookupDevice(ScanResult{ID: BLEAddress, Value: "BLE"})
+	d := registry.lookupDevice(model.Interface{Type: model.InterfaceBluetoothLowEnergy, Address: "BLE"})
 	assert.NotNil(t, d)
 	assert.Equal(t, "foo", d.Identifier)
 
-	d = registry.lookupDevice(ScanResult{ID: BTAddress, Value: "BT"})
+	d = registry.lookupDevice(model.Interface{Type: model.InterfaceBluetooth, Address: "BT"})
 	assert.NotNil(t, d)
 	assert.Equal(t, "foo", d.Identifier)
 
-	d = registry.lookupDevice(ScanResult{ID: IPAddress, Value: "1.2.3.4"})
+	d = registry.lookupDevice(model.Interface{Type: model.InterfaceIPv4, Address: "1.2.3.4"})
 	assert.NotNil(t, d)
 	assert.Equal(t, "foo", d.Identifier)
 
-	d = registry.lookupDevice(ScanResult{ID: BLEAddress, Value: "foobar"})
+	d = registry.lookupDevice(model.Interface{Type: model.InterfaceBluetoothLowEnergy, Address: "foobar"})
 	assert.Nil(t, d)
 }
 

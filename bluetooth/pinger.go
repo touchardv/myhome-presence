@@ -15,14 +15,15 @@ func (t *btTracker) Ping(devices map[string]model.Device, presence chan string) 
 		time.Sleep(2 * time.Second)
 	}
 	for _, d := range devices {
-		if len(d.BTAddress) == 0 {
-			continue
-		}
-
-		log.Debug("Try to ping: ", d.BTAddress)
-		if respondToPing(d.BTAddress) {
-			presence <- d.Identifier
-			delete(devices, d.Identifier)
+		for _, itf := range d.Interfaces {
+			if itf.Type == model.InterfaceBluetooth {
+				log.Debug("Try to ping: ", itf.Address)
+				if respondToPing(itf.Address) {
+					presence <- d.Identifier
+					delete(devices, d.Identifier)
+					break
+				}
+			}
 		}
 	}
 	t.mux.Unlock()

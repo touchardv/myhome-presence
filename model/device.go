@@ -3,7 +3,7 @@ package model
 import "time"
 
 // Status represents the various states a device can be in.
-type Status int
+type Status uint
 
 const (
 	// StatusUndefined is the default initialised device status.
@@ -28,28 +28,17 @@ func (s Status) String() string {
 	return status[s]
 }
 
-// IPInterface represents one IP device interface.
-type IPInterface struct {
-	// required: true
-	IPAddress string `json:"ip_address" yaml:"ip_address"`
-	// required: true
-	MACAddress string `json:"mac_address" yaml:"mac_address"`
-}
-
 // Device represents a single device that can be tracked.
 type Device struct {
 	// example: My phone
 	Description string `json:"description"`
+
 	// example: my-phone
 	// required: true
 	Identifier string `json:"identifier"`
-	// example: AA:BB:CC:DD:EE
-	BLEAddress string `json:"ble_address" yaml:"ble_address"`
-	// example: AA:BB:CC:DD:EE
-	BTAddress string `json:"bt_address" yaml:"bt_address"`
-	// example: { "wifi": { "ip_address": "10.10.10.124", "mac_address": "AB:CD:EF:01:02:03" } }
-	IPInterfaces map[string]IPInterface `json:"ip_interfaces" yaml:"ip_interfaces"`
-	Status       Status                 `json:"status" yaml:"status"`
-	Present      bool                   `json:"present" yaml:"present"`
-	LastSeenAt   time.Time              `json:"last_seen_at" yaml:"last_seen_at"`
+
+	Interfaces []Interface `json:"interfaces" yaml:"interfaces"`
+	Status     Status      `json:"status" yaml:"status"`
+	Present    bool        `json:"present" yaml:"present"`
+	LastSeenAt time.Time   `json:"last_seen_at" yaml:"last_seen_at"`
 }

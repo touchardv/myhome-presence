@@ -74,12 +74,10 @@ func (cfg *Config) load(location string, name string) {
 		log.Fatal(err)
 	}
 	for _, d := range devices {
-		if device, ok := cfg.Devices[d.Identifier]; ok {
-			device.Present = d.Present
-			device.LastSeenAt = d.LastSeenAt
-		} else {
-			cfg.Devices[d.Identifier] = &d
+		if _, ok := cfg.Devices[d.Identifier]; !ok {
+			cfg.Devices[d.Identifier] = &model.Device{}
 		}
+		*cfg.Devices[d.Identifier] = d
 	}
 }
 

@@ -89,7 +89,7 @@ type Device struct {
 	Description string      `json:"description"`
 	Identifier  string      `json:"identifier"`
 	Interfaces  []Interface `json:"interfaces" yaml:"interfaces"`
-	Status      Status      `json:"status" yaml:"status"`
-	Present     bool        `json:"present" yaml:"present"`
 	LastSeenAt  time.Time   `json:"last_seen_at" yaml:"last_seen_at"`
+	Present     bool        `json:"present" yaml:"present"`
+	Status      Status      `json:"status" yaml:"status"`
 }

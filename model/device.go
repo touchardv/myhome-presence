@@ -86,15 +86,10 @@ func (s *Status) UnmarshalYAML(unmarshal func(interface{}) error) error {
 
 // Device represents a single device that can be tracked.
 type Device struct {
-	// example: My phone
-	Description string `json:"description"`
-
-	// example: my-phone
-	// required: true
-	Identifier string `json:"identifier"`
-
-	Interfaces []Interface `json:"interfaces" yaml:"interfaces"`
-	Status     Status      `json:"status" yaml:"status"`
-	Present    bool        `json:"present" yaml:"present"`
-	LastSeenAt time.Time   `json:"last_seen_at" yaml:"last_seen_at"`
+	Description string      `json:"description"`
+	Identifier  string      `json:"identifier"`
+	Interfaces  []Interface `json:"interfaces" yaml:"interfaces"`
+	Status      Status      `json:"status" yaml:"status"`
+	Present     bool        `json:"present" yaml:"present"`
+	LastSeenAt  time.Time   `json:"last_seen_at" yaml:"last_seen_at"`
 }

@@ -8,14 +8,15 @@ build: $(BUILD_DIR)/$(BINARY)
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
-$(BUILD_DIR)/$(BINARY): $(BUILD_DIR) $(SOURCES)
+$(BUILD_DIR)/$(BINARY): $(BUILD_DIR) $(SOURCES) docs/openapi.go
 	go build -o $(BUILD_DIR)/$(BINARY) .
 
-$(BUILD_DIR)/$(BINARY)-linux-arm: $(SOURCES)
+$(BUILD_DIR)/$(BINARY)-linux-arm: $(SOURCES) docs/openapi.go
 	$(shell export GO111MODULE=on; export GOOS=linux; export GOARCH=arm; export GOARM=5; go build -o $(BUILD_DIR)/$(BINARY)-linux-arm .)
 
 .PHONY: clean
 clean:
+	rm -f docs/openapi.go
 	rm -rf $(BUILD_DIR)
 
 copy: $(BUILD_DIR)/$(BINARY)-linux-arm
@@ -27,7 +28,10 @@ deploy: test copy
 	ssh $(TARGET) sudo setcap 'cap_net_raw,cap_net_admin=eip' /usr/bin/myhome-presence
 	ssh $(TARGET) sudo systemctl start myhome-presence
 
-run: $(BUILD_DIR)/$(BINARY) swagger-docs
+docs/openapi.go: docs/openapi.yaml docs/generator.go
+	go generate ./...
+
+run: $(BUILD_DIR)/$(BINARY)
 	$(BUILD_DIR)/$(BINARY) --config-location=`pwd` --log-level=debug
 
 setup:
@@ -37,9 +41,6 @@ setup:
 	ssh $(TARGET) sudo mv /tmp/myhome-presence.conf /etc/sysctl.d/myhome-presence.conf
 	ssh $(TARGET) sudo mv /tmp/myhome-presence.service /etc/systemd/system/myhome-presence.service
 	ssh $(TARGET) sudo systemctl enable myhome-presence
-
-swagger-docs:
-	swagger generate spec -o ./swagger.json main.go
 
 test:
 	go test -v -cover ./...

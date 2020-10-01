@@ -1,0 +1,177 @@
+openapi: 3.0.1
+info:
+  title: Presence API.
+  description: Documentation of the Presence API Web Service.
+  contact:
+    name: Vincent Touchard
+    email: touchardv@gmail.com
+  license:
+    name: MIT
+    url: http://opensource.org/licenses/MIT
+  version: 0.0.2
+servers:
+- url: http://localhost:8080/api
+- url: https://localhost:8080/api
+paths:
+  /devices:
+    get:
+      tags:
+      - devices
+      summary: List all known device(s).
+      operationId: listDevices
+      responses:
+        200:
+          description: A list of devices
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Device'
+    post:
+      tags:
+      - devices
+      summary: Register a new device.
+      operationId: registerDevice
+      requestBody:
+        description: A device
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Device'
+        required: true
+      responses:
+        201:
+          description: ' Success'
+          content: {}
+        400:
+          description: ' Invalid parameters'
+          content: {}
+  /devices/{id}:
+    get:
+      tags:
+      - devices
+      summary: Find a device given its identifier.
+      operationId: findDevice
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the device
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: Device
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+        404:
+          description: ' Not found'
+          content: {}
+    put:
+      tags:
+      - devices
+      summary: Update a device given its identifier.
+      operationId: updateDevice
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the device
+        required: true
+        schema:
+          type: string
+      requestBody:
+        description: A device
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Device'
+        required: true
+      responses:
+        200:
+          description: Device
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+        400:
+          description: ' Invalid parameters'
+          content: {}
+        404:
+          description: ' Not found'
+          content: {}
+    delete:
+      tags:
+      - devices
+      summary: Unregister a device given its identifier.
+      operationId: unregisterDevice
+      parameters:
+      - name: id
+        in: path
+        description: The ID of the device
+        required: true
+        schema:
+          type: string
+      responses:
+        204:
+          description: ' Success'
+          content: {}
+        404:
+          description: ' Not found'
+          content: {}
+components:
+  schemas:
+    Device:
+      title: Device represents a single device that can be tracked.
+      required:
+      - identifier
+      type: object
+      properties:
+        description:
+          type: string
+          example: My phone
+        identifier:
+          type: string
+          example: my-phone
+        interfaces:
+          type: array
+          items:
+            $ref: '#/components/schemas/Interface'
+        last_seen_at:
+          type: string
+          format: date-time
+        present:
+          type: boolean
+        status:
+          type: object
+          example: tracked
+    Interface:
+      required:
+      - Address
+      - Type
+      type: object
+      properties:
+        Address:
+          type: string
+          example: 192.168.10.20
+        Type:
+          $ref: '#/components/schemas/InterfaceType'
+      description: Interface defines a physical/software interface that can be uniquely
+        addressed
+    InterfaceType:
+      type: string
+      description: |-
+        InterfaceType defines the type of physical/software interface
+      enum: [unknown, ethernet, wifi, ipv4, bluetooth, ble]
+      example: ipv4
+  responses:
+    deviceArray:
+      description: A list of devices
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/Device'

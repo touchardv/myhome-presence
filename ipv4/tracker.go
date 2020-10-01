@@ -1,8 +1,8 @@
 package ipv4
 
 import (
-	"github.com/touchardv/myhome-presence/config"
 	"github.com/touchardv/myhome-presence/device"
+	"github.com/touchardv/myhome-presence/model"
 	"golang.org/x/net/icmp"
 )
 
@@ -13,7 +13,7 @@ func EnableTracker() {
 
 type ipTracker struct {
 	sequenceNumber int
-	devices        map[string]config.Device
+	devices        map[string]model.Device
 	doneReceiving  chan bool
 	socket         *icmp.PacketConn
 }
@@ -22,6 +22,6 @@ func newIPTracker() device.Tracker {
 	return &ipTracker{
 		sequenceNumber: 0,
 		doneReceiving:  make(chan bool),
-		devices:        make(map[string]config.Device, 10),
+		devices:        make(map[string]model.Device, 10),
 	}
 }

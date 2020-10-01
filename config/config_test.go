@@ -8,6 +8,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/touchardv/myhome-presence/model"
 )
 
 func TestRetrieving(t *testing.T) {
@@ -17,18 +18,21 @@ func TestRetrieving(t *testing.T) {
 
 	device := cfg.Devices["my-laptop"]
 	assert.Equal(t, "My laptop", device.Description)
-	assert.Equal(t, 2, len(device.IPInterfaces))
-	assert.Equal(t, Tracked, device.Status)
+	assert.Equal(t, 4, len(device.Interfaces))
+	assert.Equal(t, model.StatusTracked, device.Status)
 
 	device = cfg.Devices["my-smartwatch"]
 	assert.Equal(t, "My smartwatch", device.Description)
-	assert.Equal(t, "9d329f8ba3c24ae0a494b195dda27d41", device.BLEAddress)
-	assert.Equal(t, Tracked, device.Status)
+	assert.Equal(t, 1, len(device.Interfaces))
+	assert.Equal(t, "9d329f8ba3c24ae0a494b195dda27d41", device.Interfaces[0].Address)
+	assert.Equal(t, model.StatusTracked, device.Status)
 
 	device = cfg.Devices["my-phone"]
 	assert.Equal(t, "My phone", device.Description)
-	assert.Equal(t, "AA:BB:CC:DD:EE", device.BTAddress)
-	assert.Equal(t, Tracked, device.Status)
+	assert.Equal(t, 3, len(device.Interfaces))
+	assert.Equal(t, model.InterfaceWifi, device.Interfaces[0].Type)
+	assert.Equal(t, "AB:CD:EF:01:02:03", device.Interfaces[0].Address)
+	assert.Equal(t, model.StatusTracked, device.Status)
 
 	assert.Equal(t, 2, len(cfg.Trackers))
 	assert.Equal(t, "ipv4", cfg.Trackers[0])
@@ -43,6 +47,7 @@ func TestLoadingDevicesState(t *testing.T) {
 	device := cfg.Devices["my-smartwatch"]
 	assert.True(t, device.LastSeenAt.IsZero())
 	assert.False(t, device.Present)
+	assert.Equal(t, model.StatusTracked, device.Status)
 
 	cfg.load(cwd, "devices.yaml.example")
 	assert.Equal(t, 4, len(cfg.Devices))
@@ -50,12 +55,12 @@ func TestLoadingDevicesState(t *testing.T) {
 	device = cfg.Devices["my-smartwatch"]
 	assert.False(t, device.LastSeenAt.IsZero())
 	assert.True(t, device.Present)
-	assert.Equal(t, Tracked, device.Status)
+	assert.Equal(t, model.StatusIgnored, device.Status)
 
 	device = cfg.Devices["my-ip-camera"]
 	assert.False(t, device.LastSeenAt.IsZero())
 	assert.True(t, device.Present)
-	assert.Equal(t, Undefined, device.Status)
+	assert.Equal(t, model.StatusDiscovered, device.Status)
 }
 
 func TestSavingDevicesState(t *testing.T) {
@@ -65,7 +70,7 @@ func TestSavingDevicesState(t *testing.T) {
 	}
 	defer os.RemoveAll(tempDir)
 
-	devices := []Device{Device{Identifier: "foobar", Present: true}}
+	devices := []model.Device{model.Device{Identifier: "foobar", Present: true}}
 	err = save(devices, tempDir, "test-devices.yaml")
 	assert.Nil(t, err)
 	assert.FileExists(t, filepath.Join(tempDir, "test-devices.yaml"))

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
-	"github.com/touchardv/myhome-presence/config"
+	"github.com/touchardv/myhome-presence/model"
 	"golang.org/x/net/icmp"
 	"golang.org/x/net/ipv4"
 )
@@ -17,17 +17,13 @@ const pingPacketCount = 5
 const pingPacketDelay = 100 * time.Millisecond
 const data = "AreYouThere"
 
-func (t *ipTracker) init(devices map[string]config.Device) error {
+func (t *ipTracker) init(devices map[string]model.Device) error {
 	for _, device := range devices {
-		if len(device.IPInterfaces) == 0 {
-			continue
-		}
-		for _, itf := range device.IPInterfaces {
-			if len(itf.IPAddress) == 0 {
-				continue
+		for _, itf := range device.Interfaces {
+			if itf.Type == model.InterfaceIPv4 {
+				targetAddr := &net.UDPAddr{IP: net.ParseIP(itf.Address)}
+				t.devices[targetAddr.String()] = device
 			}
-			targetAddr := &net.UDPAddr{IP: net.ParseIP(itf.IPAddress)}
-			t.devices[targetAddr.String()] = device
 		}
 	}
 
@@ -41,7 +37,7 @@ func (t *ipTracker) init(devices map[string]config.Device) error {
 	return nil
 }
 
-func (t *ipTracker) receivePingReplies(devices map[string]config.Device, duration time.Duration, presence chan string) {
+func (t *ipTracker) receivePingReplies(devices map[string]model.Device, duration time.Duration, presence chan string) {
 	go func() {
 		now := time.Now()
 		t.socket.SetReadDeadline(now.Add(duration))
@@ -77,7 +73,7 @@ func (t *ipTracker) receivePingReplies(devices map[string]config.Device, duratio
 	}()
 }
 
-func (t *ipTracker) sendPingRequests(devices map[string]config.Device) {
+func (t *ipTracker) sendPingRequests(devices map[string]model.Device) {
 	t.sequenceNumber++
 	request := icmp.Echo{ID: os.Getpid(), Seq: t.sequenceNumber, Data: []byte(data)}
 	message := icmp.Message{Type: ipv4.ICMPTypeEcho, Body: &request}
@@ -85,12 +81,12 @@ func (t *ipTracker) sendPingRequests(devices map[string]config.Device) {
 
 	for i := 1; i <= pingPacketCount; i++ {
 		for _, device := range devices {
-			for _, itf := range device.IPInterfaces {
-				if len(itf.IPAddress) == 0 {
+			for _, itf := range device.Interfaces {
+				if itf.Type != model.InterfaceIPv4 {
 					continue
 				}
-				log.Debugf("Sending ping packet to %s (%s) %d/%d ", device.Identifier, itf.IPAddress, i, pingPacketCount)
-				targetIP := net.ParseIP(itf.IPAddress)
+				log.Debugf("Sending ping packet to %s (%s) %d/%d ", device.Identifier, itf.Address, i, pingPacketCount)
+				targetIP := net.ParseIP(itf.Address)
 				targetAddr := &net.UDPAddr{IP: targetIP}
 				_, err = t.socket.WriteTo(outgoingBytes, targetAddr)
 				if err != nil {
@@ -106,7 +102,7 @@ func (t *ipTracker) sendPingRequests(devices map[string]config.Device) {
 	log.Debug("Done sending ping packets")
 }
 
-func (t *ipTracker) Ping(devices map[string]config.Device, presence chan string) {
+func (t *ipTracker) Ping(devices map[string]model.Device, presence chan string) {
 	err := t.init(devices)
 	if err != nil {
 		log.Error("Init failed: ", err)

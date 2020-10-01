@@ -4,43 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/touchardv/myhome-presence/config"
+	"github.com/touchardv/myhome-presence/model"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	log "github.com/sirupsen/logrus"
 )
-
-type eventType uint
-
-const (
-	typeAdded eventType = iota
-	typePresenceUpdated
-	typeRemoved
-)
-
-type deviceEvent struct {
-	Type eventType   `json:"type"`
-	Data interface{} `json:"data"`
-}
-
-type deviceAdded struct {
-	Description string    `json:"description"`
-	Identifier  string    `json:"identifier"`
-	Present     bool      `json:"present"`
-	LastSeenAt  time.Time `json:"last_seen_at"`
-}
-
-type devicePresenceUpdated struct {
-	Identifier string    `json:"identifier"`
-	Present    bool      `json:"present"`
-	LastSeenAt time.Time `json:"last_seen_at"`
-}
-
-type deviceRemoved struct {
-	Identifier string `json:"identifier"`
-}
 
 func newMQTTClient(c config.MQTT) MQTT.Client {
 	server := fmt.Sprintf("tcp://%s:%d", c.Hostname, c.Port)
@@ -76,8 +46,8 @@ func (r *Registry) disconnect() {
 	}
 }
 
-func (r *Registry) onAdded(d *config.Device) {
-	r.publish(typeAdded, deviceAdded{
+func (r *Registry) onAdded(d *model.Device) {
+	r.publish(model.EventTypeAdded, model.DeviceAdded{
 		Description: d.Description,
 		Identifier:  d.Identifier,
 		Present:     d.Present,
@@ -85,8 +55,8 @@ func (r *Registry) onAdded(d *config.Device) {
 	})
 }
 
-func (r *Registry) onPresenceUpdated(d *config.Device) {
-	r.publish(typePresenceUpdated, devicePresenceUpdated{
+func (r *Registry) onPresenceUpdated(d *model.Device) {
+	r.publish(model.EventTypePresenceUpdated, model.DevicePresenceUpdated{
 		Identifier: d.Identifier,
 		Present:    d.Present,
 		LastSeenAt: d.LastSeenAt,
@@ -94,16 +64,16 @@ func (r *Registry) onPresenceUpdated(d *config.Device) {
 }
 
 func (r *Registry) onRemoved(id string) {
-	r.publish(typeRemoved, deviceRemoved{
+	r.publish(model.EventTypeRemoved, model.DeviceRemoved{
 		Identifier: id,
 	})
 }
 
-func (r *Registry) publish(t eventType, data interface{}) {
+func (r *Registry) publish(t model.EventType, data interface{}) {
 	if r.mqttClient == nil {
 		return
 	}
-	bytes, err := json.Marshal(deviceEvent{Type: t, Data: data})
+	bytes, err := json.Marshal(model.Event{Type: t, Data: data})
 	if err == nil {
 		r.mqttClient.Publish(r.mqttTopic, 0, false, bytes)
 	} else {

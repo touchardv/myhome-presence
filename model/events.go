@@ -53,8 +53,8 @@ func (e *EventType) UnmarshalJSON(b []byte) error {
 }
 
 type Event struct {
-	Type EventType   `json:"type"`
-	Data interface{} `json:"data"`
+	Type EventType       `json:"type"`
+	Data json.RawMessage `json:"data"`
 }
 
 type DeviceAdded struct {

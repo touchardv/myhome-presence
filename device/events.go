@@ -69,14 +69,17 @@ func (r *Registry) onRemoved(id string) {
 	})
 }
 
-func (r *Registry) publish(t model.EventType, data interface{}) {
+func (r *Registry) publish(t model.EventType, itf interface{}) {
 	if r.mqttClient == nil {
 		return
 	}
-	bytes, err := json.Marshal(model.Event{Type: t, Data: data})
+	data, err := json.Marshal(itf)
 	if err == nil {
-		r.mqttClient.Publish(r.mqttTopic, 0, false, bytes)
-	} else {
-		log.Error(err)
+		bytes, err := json.Marshal(model.Event{Type: t, Data: data})
+		if err == nil {
+			r.mqttClient.Publish(r.mqttTopic, 0, false, bytes)
+			return
+		}
 	}
+	log.Error(err)
 }

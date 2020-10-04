@@ -247,16 +247,8 @@ func (r *Registry) UpdateDevice(id string, ud model.Device) (model.Device, error
 	if !found {
 		return model.Device{}, ErrNotFound
 	}
-	if len(strings.TrimSpace(ud.Identifier)) == 0 {
-		return model.Device{}, ErrInvalidID
-	}
 	if id != ud.Identifier {
-		if _, found := r.devices[ud.Identifier]; found {
-			return model.Device{}, ErrIDAlreadyTaken
-		}
-		r.devices[ud.Identifier] = d
-		delete(r.devices, id)
-		log.Infof("Device '%s' renamed to '%s'", id, ud.Identifier)
+		return model.Device{}, ErrInvalidID
 	}
 
 	d.Description = ud.Description

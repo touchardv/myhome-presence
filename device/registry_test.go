@@ -199,4 +199,11 @@ func TestUpdateDevice(t *testing.T) {
 	assert.True(t, d.LastSeenAt.IsZero())
 	assert.False(t, d.Present)
 	assert.Equal(t, model.StatusIgnored, d.Status)
+
+	ud.Identifier = "bar"
+	_, err = registry.UpdateDevice("foo", ud)
+	assert.Equal(t, ErrInvalidID, err)
+
+	_, err = registry.UpdateDevice("miss", ud)
+	assert.Equal(t, ErrNotFound, err)
 }

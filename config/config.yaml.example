@@ -1,32 +1,3 @@
-devices:
-  my-laptop:
-    description: My laptop
-    interfaces:
-      - type: ethernet
-        address: AB:CD:EF:01:02:02
-      - type: ipv4
-        address: 10.10.10.123
-      - type: wifi
-        address: AB:CD:EF:01:02:03
-      - type: ipv4
-        address: 10.10.10.124
-
-  my-smartwatch:
-    description: My smartwatch
-    interfaces:
-      - type: ble
-        address: 9d329f8ba3c24ae0a494b195dda27d41
-
-  my-phone:
-    description: My phone
-    interfaces:
-      - type: wifi
-        address: AB:CD:EF:01:02:03
-      - type: ipv4
-        address: 10.10.10.124
-      - type: bluetooth
-        address: AA:BB:CC:DD:EE
-
 mqtt_server:
   enabled: false
   hostname: 192.10.20.1

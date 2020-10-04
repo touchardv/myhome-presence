@@ -27,7 +27,7 @@ type Server struct {
 
 // Config contains the list of all devices to be tracked.
 type Config struct {
-	Devices    map[string]*model.Device `yaml:"devices"`
+	Devices    map[string]*model.Device `yaml:"-"`
 	MQTTServer MQTT                     `yaml:"mqtt_server"`
 	Server     Server                   `yaml:"server"`
 	Trackers   []string                 `yaml:"trackers"`
@@ -58,13 +58,7 @@ func retrieve(location string, name string) Config {
 	if err != nil {
 		log.Fatal(err)
 	}
-	for id, d := range cfg.Devices {
-		if len(d.Identifier) > 0 && d.Identifier != id {
-			log.Fatal("Invalid configuration, the device identifier does not match: ", d.Identifier)
-		}
-		d.Identifier = id
-		d.Status = model.StatusTracked
-	}
+	cfg.Devices = make(map[string]*model.Device)
 	return cfg
 }
 

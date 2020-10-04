@@ -180,3 +180,23 @@ func TestPingMissingDevices(t *testing.T) {
 	assert.Equal(t, 2, tracker.pingCount)
 	assert.False(t, device.Present)
 }
+
+func TestUpdateDevice(t *testing.T) {
+	registry := NewRegistry(cfg)
+	registry.devices["foo"].Present = false
+	registry.devices["foo"].LastSeenAt = time.Time{}
+
+	ud := model.Device{
+		Description: "Foobar",
+		Identifier:  "foo",
+		LastSeenAt:  time.Now(), // should not be updated
+		Present:     true,       // should not be updated
+		Status:      model.StatusIgnored,
+	}
+	d, err := registry.UpdateDevice("foo", ud)
+	assert.Nil(t, err)
+	assert.Equal(t, "Foobar", d.Description)
+	assert.True(t, d.LastSeenAt.IsZero())
+	assert.False(t, d.Present)
+	assert.Equal(t, model.StatusIgnored, d.Status)
+}

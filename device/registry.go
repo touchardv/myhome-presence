@@ -259,6 +259,9 @@ func (r *Registry) UpdateDevice(id string, ud model.Device) (model.Device, error
 		log.Infof("Device '%s' renamed to '%s'", id, ud.Identifier)
 	}
 
-	*d = ud
+	d.Description = ud.Description
+	d.Identifier = ud.Identifier
+	d.Interfaces = ud.Interfaces
+	d.Status = ud.Status
 	return *d, nil
 }

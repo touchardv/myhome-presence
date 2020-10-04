@@ -8,10 +8,10 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 	"github.com/touchardv/myhome-presence/api"
-	"github.com/touchardv/myhome-presence/bluetooth"
 	"github.com/touchardv/myhome-presence/config"
 	"github.com/touchardv/myhome-presence/device"
-	"github.com/touchardv/myhome-presence/ipv4"
+	"github.com/touchardv/myhome-presence/trackers/bluetooth"
+	"github.com/touchardv/myhome-presence/trackers/ipv4"
 )
 
 func main() {

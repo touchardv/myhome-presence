@@ -182,6 +182,9 @@ func (r *Registry) pingMissingDevices(presence chan string) {
 		if len(missing) > 0 {
 			for _, m := range missing {
 				d := r.devices[m.Identifier]
+				if d == nil {
+					continue
+				}
 				elapsedMinutes := now.Sub(d.LastSeenAt).Minutes()
 				if d.Present && elapsedMinutes > 10 {
 					d.Present = false

@@ -32,6 +32,7 @@ func (r *Registry) connect() {
 	if r.mqttClient == nil {
 		return
 	}
+	log.Debug("Connecting to MQTT")
 	if token := r.mqttClient.Connect(); token.Wait() && token.Error() != nil {
 		log.Error(token.Error())
 	}
@@ -42,7 +43,9 @@ func (r *Registry) disconnect() {
 		return
 	}
 	if r.mqttClient.IsConnected() {
+		log.Debug("Disconnecting from MQTT")
 		r.mqttClient.Disconnect(500)
+		log.Debug("Disconnected from MQTT")
 	}
 }
 

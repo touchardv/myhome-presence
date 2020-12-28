@@ -10,8 +10,9 @@ type InterfaceType uint
 
 // Interface defines a physical/software interface that can be uniquely addressed
 type Interface struct {
-	Type    InterfaceType
-	Address string
+	Type        InterfaceType
+	Address     string
+	IPv4Address string
 }
 
 const (
@@ -24,9 +25,6 @@ const (
 	// InterfaceWifi corresponds to a WiFi interface
 	InterfaceWifi
 
-	// InterfaceIPv4 corresponds to an IP version 4 interface
-	InterfaceIPv4
-
 	// InterfaceBluetooth corresponds to a Bluetooth interface
 	InterfaceBluetooth
 
@@ -38,7 +36,6 @@ var interfaceTypeToString = map[InterfaceType]string{
 	InterfaceUnknown:            "unknown",
 	InterfaceEthernet:           "ethernet",
 	InterfaceWifi:               "wifi",
-	InterfaceIPv4:               "ipv4",
 	InterfaceBluetooth:          "bluetooth",
 	InterfaceBluetoothLowEnergy: "ble",
 }
@@ -47,7 +44,6 @@ var stringToInterfaceType = map[string]InterfaceType{
 	"unknown":   InterfaceUnknown,
 	"ethernet":  InterfaceEthernet,
 	"wifi":      InterfaceWifi,
-	"ipv4":      InterfaceIPv4,
 	"bluetooth": InterfaceBluetooth,
 	"ble":       InterfaceBluetoothLowEnergy,
 }

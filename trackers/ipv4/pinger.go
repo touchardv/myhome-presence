@@ -20,8 +20,9 @@ const data = "AreYouThere"
 func (t *ipTracker) init(devices map[string]model.Device) error {
 	for _, device := range devices {
 		for _, itf := range device.Interfaces {
-			if itf.Type == model.InterfaceIPv4 {
-				targetAddr := &net.UDPAddr{IP: net.ParseIP(itf.Address)}
+			if itf.Type == model.InterfaceEthernet ||
+				itf.Type == model.InterfaceWifi {
+				targetAddr := &net.UDPAddr{IP: net.ParseIP(itf.IPv4Address)}
 				t.devices[targetAddr.String()] = device
 			}
 		}
@@ -82,11 +83,12 @@ func (t *ipTracker) sendPingRequests(devices map[string]model.Device) {
 	for i := 1; i <= pingPacketCount; i++ {
 		for _, device := range devices {
 			for _, itf := range device.Interfaces {
-				if itf.Type != model.InterfaceIPv4 {
+				if itf.Type != model.InterfaceEthernet &&
+					itf.Type != model.InterfaceWifi {
 					continue
 				}
-				log.Debugf("Sending ping packet to %s (%s) %d/%d ", device.Identifier, itf.Address, i, pingPacketCount)
-				targetIP := net.ParseIP(itf.Address)
+				log.Debugf("Sending ping packet to %s (%s) %d/%d ", device.Identifier, itf.IPv4Address, i, pingPacketCount)
+				targetIP := net.ParseIP(itf.IPv4Address)
 				targetAddr := &net.UDPAddr{IP: targetIP}
 				_, err = t.socket.WriteTo(outgoingBytes, targetAddr)
 				if err != nil {

@@ -137,7 +137,9 @@ func (r *Registry) newDevice(itf model.Interface) *model.Device {
 func (r *Registry) lookupDevice(itf model.Interface) *model.Device {
 	for _, d := range r.devices {
 		for _, di := range d.Interfaces {
-			if di.Type == itf.Type && di.Address == itf.Address {
+			if di.Type == itf.Type &&
+				di.Address == itf.Address &&
+				di.IPv4Address == itf.IPv4Address {
 				return d
 			}
 		}

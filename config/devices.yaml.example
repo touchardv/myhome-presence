@@ -12,8 +12,10 @@
   interfaces:
     - type: wifi
       address: CC:AA:DD:FF:AA:BB
-    - type: ipv4
-      address: 10.1.2.3
+      ipv4address: 10.1.2.3
+    - type: ethernet
+      address: AA:BB:CC:DD:FF:EE
+      ipv4address: 10.2.3.4
   status: discovered
   present: true
   last_seen_at: 2020-05-18T20:05:42.587258+02:00

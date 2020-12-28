@@ -25,11 +25,18 @@ func TestLoadingDevicesState(t *testing.T) {
 
 	device := cfg.Devices["my-smartwatch"]
 	assert.False(t, device.LastSeenAt.IsZero())
+	assert.Equal(t, 1, len(device.Interfaces))
+	assert.Equal(t, model.InterfaceBluetoothLowEnergy, device.Interfaces[0].Type)
 	assert.True(t, device.Present)
 	assert.Equal(t, model.StatusIgnored, device.Status)
 
 	device = cfg.Devices["my-ip-camera"]
 	assert.False(t, device.LastSeenAt.IsZero())
+	assert.Equal(t, 2, len(device.Interfaces))
+	assert.Equal(t, model.InterfaceWifi, device.Interfaces[0].Type)
+	assert.Equal(t, "10.1.2.3", device.Interfaces[0].IPv4Address)
+	assert.Equal(t, model.InterfaceEthernet, device.Interfaces[1].Type)
+	assert.Equal(t, "10.2.3.4", device.Interfaces[1].IPv4Address)
 	assert.True(t, device.Present)
 	assert.Equal(t, model.StatusDiscovered, device.Status)
 }

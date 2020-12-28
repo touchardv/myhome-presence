@@ -10,9 +10,9 @@ import (
 )
 
 func TestJSONSerialization(t *testing.T) {
-	i := InterfaceIPv4
+	i := InterfaceWifi
 	data, _ := json.Marshal(i)
-	assert.Equal(t, `"ipv4"`, string(data))
+	assert.Equal(t, `"wifi"`, string(data))
 }
 
 func TestJSONDeSerialization(t *testing.T) {

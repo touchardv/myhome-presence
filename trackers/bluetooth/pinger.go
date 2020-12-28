@@ -17,8 +17,8 @@ func (t *btTracker) Ping(devices map[string]model.Device, presence chan string) 
 	for _, d := range devices {
 		for _, itf := range d.Interfaces {
 			if itf.Type == model.InterfaceBluetooth {
-				log.Debug("Try to ping: ", itf.Address)
-				if respondToPing(itf.Address) {
+				log.Debug("Try to ping: ", itf.IPv4Address)
+				if respondToPing(itf.IPv4Address) {
 					presence <- d.Identifier
 					delete(devices, d.Identifier)
 					break

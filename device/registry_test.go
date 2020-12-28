@@ -15,7 +15,7 @@ var device = model.Device{
 	Interfaces: []model.Interface{
 		{Type: model.InterfaceBluetoothLowEnergy, Address: "BLE"},
 		{Type: model.InterfaceBluetooth, Address: "BT"},
-		{Type: model.InterfaceIPv4, Address: "1.2.3.4"},
+		{Type: model.InterfaceWifi, IPv4Address: "1.2.3.4"},
 	},
 }
 
@@ -122,10 +122,10 @@ func TestNewDevice(t *testing.T) {
 	assert.Equal(t, model.InterfaceBluetooth, d.Interfaces[0].Type)
 	assert.Equal(t, "two", d.Interfaces[0].Address)
 
-	d = registry.newDevice(model.Interface{Type: model.InterfaceIPv4, Address: "three"})
+	d = registry.newDevice(model.Interface{Type: model.InterfaceWifi, IPv4Address: "three"})
 	assert.Equal(t, 1, len(d.Interfaces))
-	assert.Equal(t, model.InterfaceIPv4, d.Interfaces[0].Type)
-	assert.Equal(t, "three", d.Interfaces[0].Address)
+	assert.Equal(t, model.InterfaceWifi, d.Interfaces[0].Type)
+	assert.Equal(t, "three", d.Interfaces[0].IPv4Address)
 }
 
 func TestLookupDevice(t *testing.T) {
@@ -139,7 +139,7 @@ func TestLookupDevice(t *testing.T) {
 	assert.NotNil(t, d)
 	assert.Equal(t, "foo", d.Identifier)
 
-	d = registry.lookupDevice(model.Interface{Type: model.InterfaceIPv4, Address: "1.2.3.4"})
+	d = registry.lookupDevice(model.Interface{Type: model.InterfaceWifi, IPv4Address: "1.2.3.4"})
 	assert.NotNil(t, d)
 	assert.Equal(t, "foo", d.Identifier)
 

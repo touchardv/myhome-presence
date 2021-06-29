@@ -1,11 +1,11 @@
 package docs
 
-//go:generate go run generator.go
-
 import (
+	_ "embed"
 	"net/http"
 )
 
+//go:embed  openapi.yaml
 var openapiYAML []byte
 
 // GetSwaggerDocument servers the Swagger JSON file.

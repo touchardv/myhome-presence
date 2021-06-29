@@ -8,15 +8,14 @@ build: $(BUILD_DIR)/$(BINARY)
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
-$(BUILD_DIR)/$(BINARY): $(BUILD_DIR) $(SOURCES) docs/openapi.go
+$(BUILD_DIR)/$(BINARY): $(BUILD_DIR) $(SOURCES) docs/openapi.yaml
 	go build -o $(BUILD_DIR)/$(BINARY) .
 
-$(BUILD_DIR)/$(BINARY)-linux-arm: $(SOURCES) docs/openapi.go
+$(BUILD_DIR)/$(BINARY)-linux-arm: $(SOURCES) docs/openapi.yaml
 	$(shell export GO111MODULE=on; export GOOS=linux; export GOARCH=arm; export GOARM=5; go build -o $(BUILD_DIR)/$(BINARY)-linux-arm .)
 
 .PHONY: clean
 clean:
-	rm -f docs/openapi.go
 	rm -rf $(BUILD_DIR)
 
 copy: $(BUILD_DIR)/$(BINARY)-linux-arm
@@ -27,9 +26,6 @@ deploy: test copy
 	ssh $(TARGET) sudo cp /tmp/$(BINARY)-linux-arm /usr/bin/myhome-presence
 	ssh $(TARGET) sudo setcap 'cap_net_raw,cap_net_admin=eip' /usr/bin/myhome-presence
 	ssh $(TARGET) sudo systemctl start myhome-presence
-
-docs/openapi.go: docs/openapi.yaml docs/generator.go
-	go generate ./...
 
 run: $(BUILD_DIR)/$(BINARY)
 	$(BUILD_DIR)/$(BINARY) --config-location=`pwd` --log-level=debug

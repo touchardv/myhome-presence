@@ -8,10 +8,10 @@ build: $(BUILD_DIR)/$(BINARY)
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
-$(BUILD_DIR)/$(BINARY): $(BUILD_DIR) $(SOURCES) docs/openapi.yaml
+$(BUILD_DIR)/$(BINARY): $(BUILD_DIR) $(SOURCES) docs/openapi.yaml.tmpl
 	go build -o $(BUILD_DIR)/$(BINARY) .
 
-$(BUILD_DIR)/$(BINARY)-linux-arm: $(SOURCES) docs/openapi.yaml
+$(BUILD_DIR)/$(BINARY)-linux-arm: $(SOURCES) docs/openapi.yaml.tmpl
 	$(shell export GO111MODULE=on; export GOOS=linux; export GOARCH=arm; export GOARM=5; go build -o $(BUILD_DIR)/$(BINARY)-linux-arm .)
 
 .PHONY: clean

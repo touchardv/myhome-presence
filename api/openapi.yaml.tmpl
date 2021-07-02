@@ -2,7 +2,7 @@ openapi: 3.0.1
 info:
   title: Presence API.
   description: |
-    Documentation of the Presence API Web Service (Date: {{ .date }})
+    Documentation of the Presence API Web Service.
   contact:
     name: Vincent Touchard
     email: touchardv@gmail.com
@@ -11,8 +11,7 @@ info:
     url: http://opensource.org/licenses/MIT
   version: 0.0.2
 servers:
-- url: http://localhost:8080/api
-- url: https://localhost:8080/api
+- url: http://{{ .address }}:{{ .port }}/api
 paths:
   /devices:
     get:

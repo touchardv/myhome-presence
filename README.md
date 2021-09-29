@@ -23,3 +23,10 @@ The build artifacts can be cleaned by using: `make clean`.
 ## Running
 
 In a shell, execute: `make run`
+
+## API
+
+The API is documented using the [OpenAPI](https://swagger.io/specification/) specification.
+
+The Swagger UI for consuming the API is reachable from http://localhost:8080.
+Note: when using the Chrome web browser, in order to get the web UI to work, one should ensure that "Insecure content" permission is allowed (Swagger UI is served via https but here the API specification is server via http).

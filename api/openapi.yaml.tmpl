@@ -150,10 +150,14 @@ components:
     Interface:
       required:
       - Address
+      - IPv4Address
       - Type
       type: object
       properties:
         Address:
+          type: string
+          example: 01:02:03:04:05:06
+        IPv4Address:
           type: string
           example: 192.168.10.20
         Type:

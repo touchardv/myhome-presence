@@ -14,7 +14,7 @@ Please note this is a work-in-progress; I use this project to:
 Requirements:
 
 * The `make` command (e.g. [GNU make](https://www.gnu.org/software/make/manual/make.html)).
-* The [Golang toolchain](https://golang.org/doc/install) (version 1.16 or later).
+* The [Golang toolchain](https://golang.org/doc/install) (version 1.17 or later).
 
 In a shell, execute: `make` (or `make build`).
 

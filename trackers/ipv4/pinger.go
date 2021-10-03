@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"net"
 	"os"
+	"runtime"
 	"strings"
 	"time"
 
@@ -40,6 +41,10 @@ func (t *ipTracker) init(devices map[string]model.Device) error {
 
 func (t *ipTracker) receivePingReplies(devices map[string]model.Device, duration time.Duration, presence chan string) {
 	go func() {
+		offset := 0
+		if runtime.GOOS == "darwin" {
+			offset = 20
+		}
 		now := time.Now()
 		t.socket.SetReadDeadline(now.Add(duration))
 		incomingBytes := make([]byte, 32*1024)
@@ -53,10 +58,10 @@ func (t *ipTracker) receivePingReplies(devices map[string]model.Device, duration
 				log.Error("Failed reading from socket: ", err)
 				break
 			}
-			if ipv4.ICMPType(incomingBytes[0]) != ipv4.ICMPTypeEchoReply {
+			if ipv4.ICMPType(incomingBytes[offset+0]) != ipv4.ICMPTypeEchoReply {
 				continue
 			}
-			sequenceNumber := binary.BigEndian.Uint16(incomingBytes[6:8])
+			sequenceNumber := binary.BigEndian.Uint16(incomingBytes[offset+6 : offset+8])
 			if sequenceNumber != uint16(t.sequenceNumber) {
 				log.Warn("Ignore echo reply with wrong sequence: ", sequenceNumber, " expected: ", uint16(t.sequenceNumber))
 				continue

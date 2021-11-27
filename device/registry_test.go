@@ -21,29 +21,33 @@ var device = model.Device{
 
 var cfg = config.Config{
 	Devices: map[string]*model.Device{"foo": &device},
+	Trackers: []string{
+		"dummy",
+	},
 }
 
-type dummyTracker struct {
-	pingCount int
-	scanCount int
+func TestAddDevice(t *testing.T) {
+	registry := NewRegistry(cfg)
+	registry.AddDevice(model.Device{Identifier: "bar"})
+
+	devices := registry.GetDevices()
+	assert.Equal(t, 2, len(devices))
 }
 
-var tracker dummyTracker
+func TestFindAnExistingDevice(t *testing.T) {
+	registry := NewRegistry(cfg)
 
-func newDummyTracker() Tracker {
-	return &tracker
+	d, err := registry.FindDevice("foo")
+	assert.Nil(t, err)
+	assert.Equal(t, d.Identifier, "foo")
 }
 
-func (t *dummyTracker) Scan(existence chan model.Interface, stopping chan struct{}) {
-	t.scanCount++
-}
+func TestFindAnUnknownDevice(t *testing.T) {
+	registry := NewRegistry(cfg)
 
-func (t *dummyTracker) Ping(devices map[string]model.Device, presence chan string) {
-	t.pingCount++
-}
-
-func init() {
-	Register("dummy", newDummyTracker)
+	d, err := registry.FindDevice("unknown")
+	assert.NotNil(t, err)
+	assert.Equal(t, d.Identifier, "")
 }
 
 func TestGetDevices(t *testing.T) {
@@ -54,7 +58,7 @@ func TestGetDevices(t *testing.T) {
 	assert.Equal(t, "foo", devices[0].Identifier)
 }
 
-func TestHandleDevicePresence(t *testing.T) {
+func TestReportPresenceOfAExistingDevice(t *testing.T) {
 	registry := NewRegistry(cfg)
 	devices := registry.GetDevices()
 
@@ -62,17 +66,18 @@ func TestHandleDevicePresence(t *testing.T) {
 	assert.False(t, devices[0].Present)
 	assert.True(t, devices[0].LastSeenAt.IsZero())
 
-	existence := make(chan model.Interface)
-	presence := make(chan string)
-	done := make(chan struct{})
-	go func() {
-		registry.handle(existence, presence)
-		close(done)
-	}()
-	presence <- "foo"
+	// matching the interface type
+	registry.reportPresence(model.Interface{Type: model.InterfaceWifi, IPv4Address: "1.2.3.4"})
 
-	close(registry.stopping)
-	<-done
+	devices = registry.GetDevices()
+	assert.Equal(t, 1, len(devices))
+
+	assert.True(t, devices[0].Present)
+	assert.Equal(t, "foo", devices[0].Identifier)
+	assert.False(t, devices[0].LastSeenAt.IsZero())
+
+	// with an unknown interface type
+	registry.reportPresence(model.Interface{Type: model.InterfaceUnknown, IPv4Address: "1.2.3.4"})
 
 	devices = registry.GetDevices()
 	assert.Equal(t, 1, len(devices))
@@ -82,20 +87,10 @@ func TestHandleDevicePresence(t *testing.T) {
 	assert.False(t, devices[0].LastSeenAt.IsZero())
 }
 
-func TestHandleNewDevice(t *testing.T) {
+func TestReportPresenceOfANewDevice(t *testing.T) {
 	registry := NewRegistry(config.Config{Devices: map[string]*model.Device{}})
 
-	existence := make(chan model.Interface)
-	presence := make(chan string)
-	done := make(chan struct{})
-	go func() {
-		registry.handle(existence, presence)
-		close(done)
-	}()
-	existence <- model.Interface{Type: model.InterfaceBluetoothLowEnergy, Address: "12:34:56:78:90"}
-
-	close(registry.stopping)
-	<-done
+	registry.reportPresence(model.Interface{Type: model.InterfaceBluetoothLowEnergy, Address: "12:34:56:78:90"})
 
 	devices := registry.GetDevices()
 	assert.Equal(t, 1, len(devices))
@@ -147,38 +142,18 @@ func TestLookupDevice(t *testing.T) {
 	assert.Nil(t, d)
 }
 
-func TestPingMissingDevices(t *testing.T) {
-	device := model.Device{Identifier: "foo", Status: model.StatusUndefined}
-	registry := NewRegistry(config.Config{
-		Devices:  map[string]*model.Device{"foo": &device},
-		Trackers: []string{"dummy"},
-	})
-	presence := make(chan string)
+func TestRemoveDevicee(t *testing.T) {
+	registry := NewRegistry(cfg)
 
-	// No ping: device is not tracked
-	registry.pingMissingDevices(presence)
-	assert.Equal(t, 0, tracker.pingCount)
+	registry.RemoveDevice("foo")
+	devices := registry.GetDevices()
+	assert.Equal(t, 0, len(devices))
+}
 
-	// No ping: device is present and seen less than 5 minutes ago
-	device.Status = model.StatusTracked
-	device.LastSeenAt = time.Now().Add(-3 * time.Minute)
-	device.Present = true
-	registry.pingMissingDevices(presence)
-	assert.Equal(t, 0, tracker.pingCount)
-	assert.True(t, device.Present)
-
-	// Ping: device is present and seen more than 5 minutes ago
-	device.LastSeenAt = time.Now().Add(-7 * time.Minute)
-	registry.pingMissingDevices(presence)
-	assert.Equal(t, 1, tracker.pingCount)
-	assert.True(t, device.Present)
-
-	// Ping: device is absent and seen more than 10 minutes ago
-	device.LastSeenAt = time.Now().Add(-15 * time.Minute)
-	device.Present = false
-	registry.pingMissingDevices(presence)
-	assert.Equal(t, 2, tracker.pingCount)
-	assert.False(t, device.Present)
+func TestRegistryStartStop(t *testing.T) {
+	registry := NewRegistry(cfg)
+	registry.Start()
+	registry.Stop()
 }
 
 func TestUpdateDevice(t *testing.T) {
@@ -206,4 +181,17 @@ func TestUpdateDevice(t *testing.T) {
 
 	_, err = registry.UpdateDevice("miss", ud)
 	assert.Equal(t, ErrNotFound, err)
+}
+
+func TestUpdateDevicesPresence(t *testing.T) {
+	registry := NewRegistry(cfg)
+	device.LastSeenAt = time.Now()
+	device.Present = true
+	device.Status = model.StatusTracked
+
+	registry.updateDevicesPresence(time.Now().Add(5 * time.Minute))
+	assert.True(t, device.Present)
+
+	registry.updateDevicesPresence(time.Now().Add(11 * time.Minute))
+	assert.False(t, device.Present)
 }

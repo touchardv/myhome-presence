@@ -1,23 +1,44 @@
 package ipv4
 
 import (
+	"context"
+	"sync"
 	"time"
 
-	"github.com/touchardv/myhome-presence/model"
-
 	log "github.com/sirupsen/logrus"
+	"github.com/touchardv/myhome-presence/device"
+	"golang.org/x/net/icmp"
 )
 
-func (t *ipTracker) Scan(scan chan model.Interface, stopping chan struct{}) {
-	log.Info("Starting: ip scanner")
+func (t *ipTracker) Loop(deviceReport device.ReportPresenceFunc, ctx context.Context, wg *sync.WaitGroup) error {
+	defer wg.Done()
+
+	log.Info("Starting: ipv4 tracker")
+	socket, err := icmp.ListenPacket("udp4", "0.0.0.0")
+	if err != nil {
+		log.Error("Failed to create udp4/icmp socket: ", err)
+		return err
+	}
+	t.socket = socket
+
+	stopped := make(chan bool)
+	go func() {
+		t.receiveLoop(deviceReport)
+		stopped <- true
+	}()
+
 	ticker := time.NewTicker(1 * time.Minute)
 	select {
-	case <-stopping:
+	case <-ctx.Done():
 		ticker.Stop()
-		log.Info("Stopped: ip scanner")
-		return
+		t.stopReceiving = true
+		t.socket.Close()
+		<-stopped
+		log.Info("Stopped: ipv4 tracker")
+		break
 
 	case <-ticker.C:
 		// TODO implement a background IP scanner (e.g. ping a configured IP range)
 	}
+	return nil
 }

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math/rand"
 	"strings"
-	"sync"
 	"time"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
@@ -24,19 +23,16 @@ var (
 // together with their presence status.
 type Registry struct {
 	devices    map[string]*model.Device
-	trackers   []Tracker
 	mqttClient MQTT.Client
 	mqttTopic  string
-	stopping   chan struct{}
-	waitGroup  sync.WaitGroup
+	watchdog   *watchdog
 }
 
 // NewRegistry builds a new device registry.
 func NewRegistry(cfg config.Config) *Registry {
-	devices := cfg.Devices
-	trackers := make([]Tracker, 0)
-	for _, name := range cfg.Trackers {
-		trackers = append(trackers, newTracker(name))
+	devices := make(map[string]*model.Device)
+	for identifier, d := range cfg.Devices {
+		devices[identifier] = d
 	}
 	var mqttClient MQTT.Client
 	if cfg.MQTTServer.Enabled {
@@ -44,10 +40,9 @@ func NewRegistry(cfg config.Config) *Registry {
 	}
 	return &Registry{
 		devices:    devices,
-		trackers:   trackers,
 		mqttClient: mqttClient,
 		mqttTopic:  cfg.MQTTServer.Topic,
-		stopping:   make(chan struct{}),
+		watchdog:   newWatchDog(cfg),
 	}
 }
 
@@ -82,42 +77,6 @@ func (r *Registry) GetDevices() []model.Device {
 	return devices
 }
 
-func (r *Registry) handle(scan chan model.Interface, presence chan string) {
-	log.Info("Starting: scan/presence handler")
-	for {
-		select {
-		case <-r.stopping:
-			log.Info("Stopped: scan/presence handler")
-			return
-
-		case s := <-scan:
-			d := r.lookupDevice(s)
-			if d == nil {
-				d = r.newDevice(s)
-			}
-			if d.Present == false {
-				log.Info("Device '", d.Description, "' is present")
-				d.Present = true
-			}
-			d.LastSeenAt = time.Now()
-			r.onPresenceUpdated(d)
-			break
-
-		case identifier := <-presence:
-			if d, ok := r.devices[identifier]; ok {
-				if d.Present == false {
-					log.Info("Device '", d.Description, "' is present")
-					d.Present = true
-				}
-				d.LastSeenAt = time.Now()
-				r.onPresenceUpdated(d)
-			} else {
-				log.Warn("Unknown device: ", identifier)
-			}
-		}
-	}
-}
-
 func (r *Registry) newDevice(itf model.Interface) *model.Device {
 	now := time.Now()
 	d := model.Device{
@@ -137,65 +96,22 @@ func (r *Registry) newDevice(itf model.Interface) *model.Device {
 func (r *Registry) lookupDevice(itf model.Interface) *model.Device {
 	for _, d := range r.devices {
 		for _, di := range d.Interfaces {
-			if di.Type == itf.Type &&
-				di.Address == itf.Address &&
-				di.IPv4Address == itf.IPv4Address {
+			match := true
+			if itf.Type != model.InterfaceUnknown {
+				match = match && (itf.Type == di.Type)
+			}
+			if len(itf.Address) > 0 {
+				match = match && (itf.Address == di.Address)
+			}
+			if len(itf.IPv4Address) > 0 {
+				match = match && (itf.IPv4Address == di.IPv4Address)
+			}
+			if match {
 				return d
 			}
 		}
 	}
 	return nil
-}
-
-func (r *Registry) pingLoop(presence chan string) {
-	log.Info("Starting: device watchdog")
-	check := time.NewTimer(5 * time.Second)
-	for {
-		select {
-		case <-r.stopping:
-			log.Info("Stopped: device watchdog")
-			return
-
-		case <-check.C:
-			r.pingMissingDevices(presence)
-			check.Reset(1 * time.Minute)
-		}
-	}
-}
-
-func (r *Registry) pingMissingDevices(presence chan string) {
-	missing := make(map[string]model.Device)
-	now := time.Now()
-	for _, d := range r.devices {
-		if d.Status != model.StatusTracked {
-			continue
-		}
-		elapsedMinutes := now.Sub(d.LastSeenAt).Minutes()
-		if d.Present == false || elapsedMinutes >= 5 {
-			missing[d.Identifier] = *d
-		}
-	}
-
-	if len(missing) > 0 {
-		for _, t := range r.trackers {
-			t.Ping(missing, presence)
-		}
-
-		if len(missing) > 0 {
-			for _, m := range missing {
-				d := r.devices[m.Identifier]
-				if d == nil {
-					continue
-				}
-				elapsedMinutes := now.Sub(d.LastSeenAt).Minutes()
-				if d.Present && elapsedMinutes > 10 {
-					d.Present = false
-					r.onPresenceUpdated(d)
-					log.Info("Device '", d.Description, "' is not present")
-				}
-			}
-		}
-	}
 }
 
 // RemoveDevice removes a device.
@@ -209,36 +125,28 @@ func (r *Registry) RemoveDevice(id string) error {
 	return ErrNotFound
 }
 
+func (r *Registry) reportPresence(itf model.Interface) {
+	d := r.lookupDevice(itf)
+	if d == nil {
+		d = r.newDevice(itf)
+	}
+	d.Present = true
+	d.LastSeenAt = time.Now()
+	r.onPresenceUpdated(d)
+	log.Info("Device '", d.Description, "' is present")
+}
+
 // Start activates the tracking of devices.
 func (r *Registry) Start() {
 	log.Info("Starting: registry")
 	r.connect()
-	existence := make(chan model.Interface, 10)
-	presence := make(chan string, 10)
-	go func() {
-		r.handle(existence, presence)
-		r.waitGroup.Done()
-	}()
-	go func() {
-		r.pingLoop(presence)
-		r.waitGroup.Done()
-	}()
-	r.waitGroup.Add(2)
-
-	for _, t := range r.trackers {
-		r.waitGroup.Add(1)
-		go func(t Tracker) {
-			t.Scan(existence, r.stopping)
-			r.waitGroup.Done()
-		}(t)
-	}
+	go r.watchdog.loop(r)
 }
 
 // Stop de-activates the tracking of devices.
 func (r *Registry) Stop() {
 	log.Info("Stopping: registry")
-	close(r.stopping)
-	r.waitGroup.Wait()
+	r.watchdog.stop()
 	r.disconnect()
 	log.Info("Stopped: registry")
 }
@@ -258,4 +166,17 @@ func (r *Registry) UpdateDevice(id string, ud model.Device) (model.Device, error
 	d.Interfaces = ud.Interfaces
 	d.Status = ud.Status
 	return *d, nil
+}
+
+func (r *Registry) updateDevicesPresence(t time.Time) {
+	for _, d := range r.devices {
+		if d.Status == model.StatusTracked {
+			elapsedMinutes := t.Sub(d.LastSeenAt).Minutes()
+			if elapsedMinutes >= 10 {
+				d.Present = false
+				r.onPresenceUpdated(d)
+				log.Info("Device '", d.Description, "' is not present")
+			}
+		}
+	}
 }

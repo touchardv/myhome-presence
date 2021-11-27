@@ -16,8 +16,8 @@ func (t *btTracker) Ping(d model.Device) {
 	}
 	for _, itf := range d.Interfaces {
 		if itf.Type == model.InterfaceBluetooth {
-			log.Debug("Try to ping: ", itf.Address)
-			if respondToPing(itf.Address) {
+			log.Debug("Try to ping: ", itf.MACAddress)
+			if respondToPing(itf.MACAddress) {
 				t.deviceReport(itf)
 				break
 			}

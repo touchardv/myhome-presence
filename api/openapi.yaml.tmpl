@@ -149,12 +149,10 @@ components:
           example: tracked
     Interface:
       required:
-      - Address
-      - IPv4Address
       - Type
       type: object
       properties:
-        Address:
+        MACAddress:
           type: string
           example: 01:02:03:04:05:06
         IPv4Address:
@@ -169,7 +167,7 @@ components:
       description: |-
         InterfaceType defines the type of physical/software interface
       enum: [unknown, ethernet, wifi, ipv4, bluetooth, ble]
-      example: ipv4
+      example: ethernet
   responses:
     deviceArray:
       description: A list of devices

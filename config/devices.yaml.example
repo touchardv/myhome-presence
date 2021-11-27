@@ -2,7 +2,7 @@
   identifier: my-smartwatch
   interfaces:
     - type: ble
-      address: 9d329f8ba3c24ae0a494b195dda27d41
+      macaddress: 9d329f8ba3c24ae0a494b195dda27d41
   status: ignored
   present: true
   last_seen_at: 2020-05-18T20:05:42.587258+02:00
@@ -11,10 +11,10 @@
   identifier: my-ip-camera
   interfaces:
     - type: wifi
-      address: CC:AA:DD:FF:AA:BB
+      macaddress: CC:AA:DD:FF:AA:BB
       ipv4address: 10.1.2.3
     - type: ethernet
-      address: AA:BB:CC:DD:FF:EE
+      macaddress: AA:BB:CC:DD:FF:EE
       ipv4address: 10.2.3.4
   status: discovered
   present: true

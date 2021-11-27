@@ -100,8 +100,8 @@ func (r *Registry) lookupDevice(itf model.Interface) *model.Device {
 			if itf.Type != model.InterfaceUnknown {
 				match = match && (itf.Type == di.Type)
 			}
-			if len(itf.Address) > 0 {
-				match = match && (itf.Address == di.Address)
+			if len(itf.MACAddress) > 0 {
+				match = match && (itf.MACAddress == di.MACAddress)
 			}
 			if len(itf.IPv4Address) > 0 {
 				match = match && (itf.IPv4Address == di.IPv4Address)

@@ -18,7 +18,7 @@ func (t *btTracker) onDeviceStateChanged(d gatt.Device, s gatt.State) {
 
 func (t *btTracker) onPeripheralDiscovered(p gatt.Peripheral, a *gatt.Advertisement, rssi int) {
 	log.Debugf("Discovered a Bluetooth device: %s %s %s", p.ID(), p.Name(), a.LocalName)
-	t.scan <- model.Interface{Type: model.InterfaceBluetoothLowEnergy, Address: p.ID()}
+	t.scan <- model.Interface{Type: model.InterfaceBluetoothLowEnergy, MACAddress: p.ID()}
 }
 
 func (t *btTracker) startScanning() {

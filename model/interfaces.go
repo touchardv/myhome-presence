@@ -11,7 +11,7 @@ type InterfaceType uint
 // Interface defines a physical/software interface that can be uniquely addressed
 type Interface struct {
 	Type        InterfaceType
-	Address     string
+	MACAddress  string
 	IPv4Address string
 }
 

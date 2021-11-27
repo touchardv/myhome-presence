@@ -6,8 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/touchardv/myhome-presence/model"
-
 	"github.com/bettercap/gatt"
 	log "github.com/sirupsen/logrus"
 	"github.com/touchardv/myhome-presence/device"
@@ -21,7 +19,6 @@ func EnableTracker() {
 type btTracker struct {
 	device       gatt.Device
 	scanning     bool
-	scan         chan model.Interface
 	mux          sync.Mutex
 	deviceReport device.ReportPresenceFunc
 }

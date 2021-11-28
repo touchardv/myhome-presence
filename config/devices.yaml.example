@@ -5,6 +5,7 @@
       macaddress: 9d329f8ba3c24ae0a494b195dda27d41
   status: ignored
   present: true
+  first_seen_at: 2020-05-18T20:05:42.587258+02:00
   last_seen_at: 2020-05-18T20:05:42.587258+02:00
 
 - description: My IP camera
@@ -18,4 +19,5 @@
       ipv4address: 10.2.3.4
   status: discovered
   present: true
+  first_seen_at: 2020-05-18T20:05:42.587258+02:00 
   last_seen_at: 2020-05-18T20:05:42.587258+02:00

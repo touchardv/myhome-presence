@@ -132,6 +132,7 @@ func (r *Registry) reportPresence(itf model.Interface) {
 	}
 	d.LastSeenAt = time.Now()
 	if !d.Present {
+		d.FirstSeenAt = d.LastSeenAt
 		d.Present = true
 		log.Info("Device '", d.Description, "' is present")
 	}

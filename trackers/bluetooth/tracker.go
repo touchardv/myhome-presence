@@ -1,11 +1,10 @@
 package bluetooth
 
 import (
+	"context"
 	"math/rand"
 	"sync"
 	"time"
-
-	"github.com/touchardv/myhome-presence/model"
 
 	"github.com/bettercap/gatt"
 	log "github.com/sirupsen/logrus"
@@ -18,10 +17,10 @@ func EnableTracker() {
 }
 
 type btTracker struct {
-	device   gatt.Device
-	scanning bool
-	scan     chan model.Interface
-	mux      sync.Mutex
+	device       gatt.Device
+	scanning     bool
+	mux          sync.Mutex
+	deviceReport device.ReportPresenceFunc
 }
 
 func newBTTracker() device.Tracker {
@@ -30,9 +29,11 @@ func newBTTracker() device.Tracker {
 	}
 }
 
-func (t *btTracker) Scan(scan chan model.Interface, stopping chan struct{}) {
+func (t *btTracker) Loop(deviceReport device.ReportPresenceFunc, ctx context.Context, wg *sync.WaitGroup) error {
+	defer wg.Done()
+
 	log.Info("Starting: Bluetooth tracker")
-	t.scan = scan
+	t.deviceReport = deviceReport
 	t.startScanning()
 	timer := time.NewTimer(30 * time.Second)
 	for {
@@ -46,13 +47,13 @@ func (t *btTracker) Scan(scan chan model.Interface, stopping chan struct{}) {
 			}
 			timer.Reset(randomDuration(t.scanning))
 			t.mux.Unlock()
-		case <-stopping:
+		case <-ctx.Done():
 			timer.Stop()
 			if t.scanning {
 				t.stopScanning()
 			}
 			log.Info("Stopped: Bluetooth tracker")
-			return
+			return nil
 		}
 	}
 }

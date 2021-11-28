@@ -1,15 +1,21 @@
 package device
 
 import (
+	"context"
+	"sync"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/touchardv/myhome-presence/model"
 )
 
+// ReportPresenceFunc is a function that can be used by a Tracker to report the presence of a given device interface.
+type ReportPresenceFunc func(model.Interface)
+
 // Tracker tracks the presence of devices.
 type Tracker interface {
-	Scan(existence chan model.Interface, stopping chan struct{})
+	Loop(deviceReport ReportPresenceFunc, ctx context.Context, wg *sync.WaitGroup) error
 
-	Ping(devices map[string]model.Device, presence chan string)
+	Ping(model.Device)
 }
 
 // NewTrackerFunc is a factory function for instantiating a new Tracker.

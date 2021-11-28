@@ -7,22 +7,19 @@ import (
 	"github.com/touchardv/myhome-presence/model"
 )
 
-func (t *btTracker) Ping(devices map[string]model.Device, presence chan string) {
+func (t *btTracker) Ping(d model.Device) {
 	t.mux.Lock()
 	if t.scanning {
 		t.stopScanning()
 		// Wait a little before doing the ping
 		time.Sleep(2 * time.Second)
 	}
-	for _, d := range devices {
-		for _, itf := range d.Interfaces {
-			if itf.Type == model.InterfaceBluetooth {
-				log.Debug("Try to ping: ", itf.IPv4Address)
-				if respondToPing(itf.IPv4Address) {
-					presence <- d.Identifier
-					delete(devices, d.Identifier)
-					break
-				}
+	for _, itf := range d.Interfaces {
+		if itf.Type == model.InterfaceBluetooth {
+			log.Debug("Try to ping: ", itf.MACAddress)
+			if respondToPing(itf.MACAddress) {
+				t.deviceReport(itf)
+				break
 			}
 		}
 	}

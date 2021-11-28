@@ -27,7 +27,7 @@ func TestDeviceRegistration(t *testing.T) {
 	req, _ = http.NewRequest("POST", "/api/devices", bytes.NewBuffer(jsonStr))
 	response = performRequest(server, req)
 	assert.Equal(t, http.StatusCreated, response.Code)
-	assert.Equal(t, 1, len(devices))
+	assert.Equal(t, 1, len(registry.GetDevices()))
 }
 
 func TestFindDevice(t *testing.T) {
@@ -77,7 +77,7 @@ func TestUnregisterDevice(t *testing.T) {
 	req, _ = http.NewRequest("DELETE", "/api/devices/foo", nil)
 	response = performRequest(server, req)
 	assert.Equal(t, http.StatusNoContent, response.Code)
-	assert.Equal(t, 0, len(devices))
+	assert.Equal(t, 0, len(registry.GetDevices()))
 }
 
 func TestUpdateDevice(t *testing.T) {

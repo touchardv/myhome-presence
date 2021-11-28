@@ -130,10 +130,12 @@ func (r *Registry) reportPresence(itf model.Interface) {
 	if d == nil {
 		d = r.newDevice(itf)
 	}
-	d.Present = true
 	d.LastSeenAt = time.Now()
+	if !d.Present {
+		d.Present = true
+		log.Info("Device '", d.Description, "' is present")
+	}
 	r.onPresenceUpdated(d)
-	log.Info("Device '", d.Description, "' is present")
 }
 
 // Start activates the tracking of devices.
@@ -173,9 +175,11 @@ func (r *Registry) updateDevicesPresence(t time.Time) {
 		if d.Status == model.StatusTracked {
 			elapsedMinutes := t.Sub(d.LastSeenAt).Minutes()
 			if elapsedMinutes >= 10 {
-				d.Present = false
+				if d.Present {
+					d.Present = false
+					log.Info("Device '", d.Description, "' is not present")
+				}
 				r.onPresenceUpdated(d)
-				log.Info("Device '", d.Description, "' is not present")
 			}
 		}
 	}

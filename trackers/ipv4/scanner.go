@@ -3,7 +3,6 @@ package ipv4
 import (
 	"context"
 	"sync"
-	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/touchardv/myhome-presence/device"
@@ -27,18 +26,11 @@ func (t *ipTracker) Loop(deviceReport device.ReportPresenceFunc, ctx context.Con
 		stopped <- true
 	}()
 
-	ticker := time.NewTicker(1 * time.Minute)
-	select {
-	case <-ctx.Done():
-		ticker.Stop()
-		t.stopReceiving = true
-		t.socket.Close()
-		<-stopped
-		log.Info("Stopped: ipv4 tracker")
-		break
+	<-ctx.Done()
+	t.stopReceiving = true
+	t.socket.Close()
+	<-stopped
+	log.Info("Stopped: ipv4 tracker")
 
-	case <-ticker.C:
-		// TODO implement a background IP scanner (e.g. ping a configured IP range)
-	}
 	return nil
 }

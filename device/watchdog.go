@@ -18,8 +18,8 @@ type watchdog struct {
 
 func newWatchDog(cfg config.Config) *watchdog {
 	trackers := make([]Tracker, 0)
-	for _, name := range cfg.Trackers {
-		trackers = append(trackers, newTracker(name))
+	for name, settings := range cfg.Trackers {
+		trackers = append(trackers, newTracker(name, settings))
 	}
 	return &watchdog{
 		stopped:  make(chan bool),

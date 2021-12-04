@@ -25,12 +25,14 @@ type Server struct {
 	SwaggerUIURL string `yaml:"swagger_ui_url"`
 }
 
+type Settings map[string]string
+
 // Config contains the list of all devices to be tracked.
 type Config struct {
 	Devices    map[string]*model.Device `yaml:"-"`
 	MQTTServer MQTT                     `yaml:"mqtt_server"`
 	Server     Server                   `yaml:"server"`
-	Trackers   []string                 `yaml:"trackers"`
+	Trackers   map[string]Settings      `yaml:"trackers"`
 	location   string                   `yaml:"-"`
 }
 

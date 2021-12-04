@@ -20,10 +20,8 @@ var device = model.Device{
 }
 
 var cfg = config.Config{
-	Devices: map[string]*model.Device{"foo": &device},
-	Trackers: []string{
-		"dummy",
-	},
+	Devices:  map[string]*model.Device{"foo": &device},
+	Trackers: map[string]config.Settings{"dummy": {}},
 }
 
 func TestAddDevice(t *testing.T) {

@@ -46,7 +46,7 @@ func c2600Login(baseUrl string, username string, password string) (credentials, 
 	}
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
-		return cred, errors.New("login failed: unexpected http response " + res.Status)
+		return cred, errors.New("unexpected http response " + res.Status)
 	}
 	response := loginResponse{}
 	err = json.NewDecoder(res.Body).Decode(&response)
@@ -54,7 +54,7 @@ func c2600Login(baseUrl string, username string, password string) (credentials, 
 		return cred, err
 	}
 	if !response.Success {
-		return cred, errors.New("login failed: " + response.ErrorCode)
+		return cred, errors.New(response.ErrorCode)
 	}
 	for _, c := range res.Cookies() {
 		if c.Name == c2600SessionCookie {
@@ -63,7 +63,7 @@ func c2600Login(baseUrl string, username string, password string) (credentials, 
 			return cred, nil
 		}
 	}
-	return cred, errors.New("login failed: no cookie")
+	return cred, errors.New("missing session cookie")
 
 }
 
@@ -89,14 +89,14 @@ func c2600Status(baseUrl string, a credentials) (statusResponse, error) {
 		return response, err
 	}
 	if res.StatusCode != http.StatusOK {
-		return response, errors.New("status failed: unexpected http response " + res.Status)
+		return response, errors.New("unexpected http response " + res.Status)
 	}
 	err = json.NewDecoder(res.Body).Decode(&response)
 	if err != nil {
 		return response, err
 	}
 	if !response.Success {
-		return response, errors.New("status failed: " + response.ErrorCode)
+		return response, errors.New(response.ErrorCode)
 	}
 	return response, err
 }

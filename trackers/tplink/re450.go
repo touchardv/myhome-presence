@@ -39,7 +39,7 @@ func re450Login(baseUrl string, username string, password string) (credentials, 
 	}
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
-		return cred, errors.New("login failed: unexpected http response " + res.Status)
+		return cred, errors.New("unexpected http response " + res.Status)
 	}
 	for _, c := range res.Cookies() {
 		if c.Name == re450SessionCookie {
@@ -48,7 +48,7 @@ func re450Login(baseUrl string, username string, password string) (credentials, 
 		}
 	}
 	if len(cred.Nonce) == 0 {
-		return cred, errors.New("login failed: missing cookie")
+		return cred, errors.New("missing session cookie")
 	}
 
 	v := url.Values{}
@@ -71,7 +71,7 @@ func re450Login(baseUrl string, username string, password string) (credentials, 
 	}
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
-		return cred, errors.New("login failed: unexpected http response " + res.Status)
+		return cred, errors.New("unexpected http response " + res.Status)
 	}
 
 	response := loginResponse{}
@@ -80,7 +80,7 @@ func re450Login(baseUrl string, username string, password string) (credentials, 
 		return cred, err
 	}
 	if !response.Success {
-		return cred, errors.New("login failed: " + response.ErrorCode)
+		return cred, errors.New(response.ErrorCode)
 	}
 	for _, c := range res.Cookies() {
 		if c.Name == re450SessionCookie {
@@ -136,7 +136,7 @@ func re450Status(baseUrl string, a credentials) (statusResponse, error) {
 	}
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
-		return status, errors.New("status failed: unexpected http response " + res.Status)
+		return status, errors.New("unexpected http response " + res.Status)
 	}
 	r := re450StatusResponse{}
 	err = json.NewDecoder(res.Body).Decode(&r)
@@ -144,7 +144,7 @@ func re450Status(baseUrl string, a credentials) (statusResponse, error) {
 		return status, err
 	}
 	if !r.Success {
-		return status, errors.New("status failed: " + r.ErrorCode)
+		return status, errors.New(r.ErrorCode)
 	}
 	status.Data = statusData{WirelessDevices: make([]statusDataDevice, len(r.Data))}
 	for i, device := range r.Data {

@@ -1,6 +1,7 @@
 package ipv4
 
 import (
+	"github.com/touchardv/myhome-presence/config"
 	"github.com/touchardv/myhome-presence/device"
 	"golang.org/x/net/icmp"
 )
@@ -16,7 +17,7 @@ type ipTracker struct {
 	stopReceiving  bool
 }
 
-func newIPTracker() device.Tracker {
+func newIPTracker(config.Settings) device.Tracker {
 	return &ipTracker{
 		sequenceNumber: 0,
 		stopReceiving:  false,

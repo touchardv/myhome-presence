@@ -10,5 +10,12 @@ server:
   swagger_ui_url: https://validator.swagger.io
 
 trackers:
-- ipv4
-- bluetooth
+  ipv4: {}
+  bluetooth: {}
+  tplink-c2600:
+    url: http://192.10.20.1
+    username: foobar
+    password: encodedPassword256CharactersLongCapturedFromTheWebConsole
+  tplink-re450:
+    url: http://192.10.20.2
+    password: encodedPasswordWithMD5

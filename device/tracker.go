@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/touchardv/myhome-presence/config"
 	"github.com/touchardv/myhome-presence/model"
 )
 
@@ -19,7 +20,7 @@ type Tracker interface {
 }
 
 // NewTrackerFunc is a factory function for instantiating a new Tracker.
-type NewTrackerFunc func() Tracker
+type NewTrackerFunc func(config.Settings) Tracker
 
 var factories map[string]NewTrackerFunc = make(map[string]NewTrackerFunc)
 
@@ -28,9 +29,9 @@ func Register(name string, f NewTrackerFunc) {
 	factories[name] = f
 }
 
-func newTracker(name string) Tracker {
+func newTracker(name string, settings config.Settings) Tracker {
 	if f, ok := factories[name]; ok {
-		return f()
+		return f(settings)
 	}
 	log.Fatal("No suck tracker: ", name)
 	return nil

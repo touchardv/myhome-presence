@@ -8,6 +8,7 @@ import (
 
 	"github.com/bettercap/gatt"
 	log "github.com/sirupsen/logrus"
+	"github.com/touchardv/myhome-presence/config"
 	"github.com/touchardv/myhome-presence/device"
 )
 
@@ -23,7 +24,7 @@ type btTracker struct {
 	deviceReport device.ReportPresenceFunc
 }
 
-func newBTTracker() device.Tracker {
+func newBTTracker(config.Settings) device.Tracker {
 	return &btTracker{
 		scanning: false,
 	}

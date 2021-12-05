@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/touchardv/myhome-presence/config"
 	"github.com/touchardv/myhome-presence/model"
 )
 
@@ -13,7 +14,7 @@ type dummyTracker struct {
 
 var tracker dummyTracker
 
-func newDummyTracker() Tracker {
+func newDummyTracker(config.Settings) Tracker {
 	return &tracker
 }
 

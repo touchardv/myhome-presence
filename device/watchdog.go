@@ -53,7 +53,7 @@ func (w *watchdog) loop(r *Registry) {
 		case <-check.C:
 			now := time.Now()
 			if needUpdate {
-				r.updateDevicesPresence(now)
+				r.UpdateDevicesPresence(now)
 			} else {
 				w.pingMissingDevices(r, now)
 			}

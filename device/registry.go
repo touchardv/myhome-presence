@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"strings"
+	"sync"
 	"time"
 
 	MQTT "github.com/eclipse/paho.mqtt.golang"
@@ -14,15 +15,16 @@ import (
 )
 
 var (
-	ErrNotFound       = errors.New("Device not found")
-	ErrInvalidID      = errors.New("Invalid device identifier")
-	ErrIDAlreadyTaken = errors.New("Device identifier already taken")
+	ErrNotFound       = errors.New("device not found")
+	ErrInvalidID      = errors.New("invalid device identifier")
+	ErrIDAlreadyTaken = errors.New("device identifier already taken")
 )
 
 // Registry maintains the status of all tracked devices
 // together with their presence status.
 type Registry struct {
 	devices    map[string]*model.Device
+	mutex      *sync.RWMutex
 	mqttClient MQTT.Client
 	mqttTopic  string
 	watchdog   *watchdog
@@ -40,6 +42,7 @@ func NewRegistry(cfg config.Config) *Registry {
 	}
 	return &Registry{
 		devices:    devices,
+		mutex:      &sync.RWMutex{},
 		mqttClient: mqttClient,
 		mqttTopic:  cfg.MQTTServer.Topic,
 		watchdog:   newWatchDog(cfg),
@@ -48,6 +51,9 @@ func NewRegistry(cfg config.Config) *Registry {
 
 // AddDevice adds a new device to the registry.
 func (r *Registry) AddDevice(d model.Device) error {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
 	if len(strings.TrimSpace(d.Identifier)) == 0 {
 		return ErrInvalidID
 	}
@@ -62,6 +68,9 @@ func (r *Registry) AddDevice(d model.Device) error {
 
 // FindDevice lookups a device given its identifier.
 func (r *Registry) FindDevice(id string) (model.Device, error) {
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
+
 	if d, found := r.devices[id]; found {
 		return *d, nil
 	}
@@ -70,6 +79,9 @@ func (r *Registry) FindDevice(id string) (model.Device, error) {
 
 // GetDevices returns all known devices.
 func (r *Registry) GetDevices() []model.Device {
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
+
 	devices := make([]model.Device, 0)
 	for _, d := range r.devices {
 		devices = append(devices, *d)
@@ -116,6 +128,9 @@ func (r *Registry) lookupDevice(itf model.Interface) *model.Device {
 
 // RemoveDevice removes a device.
 func (r *Registry) RemoveDevice(id string) error {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
 	if _, found := r.devices[id]; found {
 		delete(r.devices, id)
 		r.onRemoved(id)
@@ -126,6 +141,9 @@ func (r *Registry) RemoveDevice(id string) error {
 }
 
 func (r *Registry) reportPresence(itf model.Interface) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
 	d := r.lookupDevice(itf)
 	if d == nil {
 		d = r.newDevice(itf)
@@ -156,6 +174,9 @@ func (r *Registry) Stop() {
 
 // UpdateDevice updates an existing device.
 func (r *Registry) UpdateDevice(id string, ud model.Device) (model.Device, error) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
 	d, found := r.devices[id]
 	if !found {
 		return model.Device{}, ErrNotFound
@@ -171,7 +192,10 @@ func (r *Registry) UpdateDevice(id string, ud model.Device) (model.Device, error
 	return *d, nil
 }
 
-func (r *Registry) updateDevicesPresence(t time.Time) {
+func (r *Registry) UpdateDevicesPresence(t time.Time) {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
 	for _, d := range r.devices {
 		if d.Status == model.StatusTracked {
 			elapsedMinutes := t.Sub(d.LastSeenAt).Minutes()

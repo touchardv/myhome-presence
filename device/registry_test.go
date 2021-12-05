@@ -187,9 +187,9 @@ func TestUpdateDevicesPresence(t *testing.T) {
 	device.Present = true
 	device.Status = model.StatusTracked
 
-	registry.updateDevicesPresence(time.Now().Add(5 * time.Minute))
+	registry.UpdateDevicesPresence(time.Now().Add(5 * time.Minute))
 	assert.True(t, device.Present)
 
-	registry.updateDevicesPresence(time.Now().Add(11 * time.Minute))
+	registry.UpdateDevicesPresence(time.Now().Add(11 * time.Minute))
 	assert.False(t, device.Present)
 }

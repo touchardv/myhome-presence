@@ -13,5 +13,5 @@ func TestMD5(t *testing.T) {
 
 func TestRE450Token(t *testing.T) {
 	r := re450Token("foobar", "nonce")
-	assert.Equal(t, "C144BC46C186CC3DBE085D9C64C3D181", r)
+	assert.Equal(t, "0AA33C47954A9397B25860B8C0DAF623", r)
 }

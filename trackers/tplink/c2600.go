@@ -14,12 +14,14 @@ import (
 	"github.com/touchardv/myhome-presence/device"
 )
 
+const c2600 = "tplink-c2600"
+
 func newArcherC2600Tracker(cfg config.Settings) device.Tracker {
 	return &tplinkTracker{
-		name:     "tplink-c2600",
-		baseURL:  cfg["url"],
-		username: cfg["username"],
-		password: cfg["password"],
+		name:     c2600,
+		baseURL:  ensureSetting("url", cfg, c2600),
+		username: ensureSetting("username", cfg, c2600),
+		password: ensureSetting("password", cfg, c2600),
 		login:    c2600Login,
 		status:   c2600Status,
 	}

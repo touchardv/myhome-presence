@@ -6,6 +6,7 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/touchardv/myhome-presence/config"
 	"github.com/touchardv/myhome-presence/device"
 	"github.com/touchardv/myhome-presence/model"
 )
@@ -91,4 +92,12 @@ func (t *tplinkTracker) Loop(deviceReport device.ReportPresenceFunc, ctx context
 
 func (t *tplinkTracker) Ping(model.Device) {
 	// Nothing to be done here. The tracker is purely asynchronous.
+}
+
+func ensureSetting(key string, cfg config.Settings, name string) string {
+	if v, found := cfg[key]; found {
+		return v
+	}
+	log.Fatalf("[%s] Missing device '%s' configuration setting", name, key)
+	return ""
 }

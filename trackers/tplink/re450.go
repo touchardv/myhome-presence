@@ -16,11 +16,13 @@ import (
 	"github.com/touchardv/myhome-presence/device"
 )
 
+const re450 = "tplink-re450"
+
 func newRE450Tracker(cfg config.Settings) device.Tracker {
 	return &tplinkTracker{
-		name:     "tplink-re450",
-		baseURL:  cfg["url"],
-		password: cfg["password"],
+		name:     re450,
+		baseURL:  ensureSetting("url", cfg, re450),
+		password: ensureSetting("password", cfg, re450),
 		login:    re450Login,
 		status:   re450Status,
 	}
@@ -92,7 +94,7 @@ func re450Login(baseUrl string, username string, password string) (credentials, 
 }
 
 func re450Token(password string, nonce string) string {
-	return strings.ToUpper(md5Func(strings.ToUpper(md5Func(password)) + ":" + nonce))
+	return strings.ToUpper(md5Func(strings.ToUpper(password) + ":" + nonce))
 }
 
 func md5Func(in string) string {

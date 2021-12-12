@@ -105,7 +105,7 @@ func md5Func(in string) string {
 
 type re450StatusResponse struct {
 	Data      []re450Device `json:"data"`
-	ErrorCode string        `json:"errorcode"`
+	ErrorCode int           `json:"errorcode"`
 	Success   bool          `json:"success"`
 	Timeout   bool          `json:"timeout"`
 }
@@ -146,13 +146,13 @@ func re450Status(baseUrl string, a credentials) (statusResponse, error) {
 		return status, err
 	}
 	if !r.Success {
-		return status, errors.New(r.ErrorCode)
+		return status, fmt.Errorf("error code: %d", r.ErrorCode)
 	}
 	status.Data = statusData{WirelessDevices: make([]statusDataDevice, len(r.Data))}
 	for i, device := range r.Data {
 		status.Data.WirelessDevices[i] = statusDataDevice(device)
 	}
-	status.ErrorCode = r.ErrorCode
+	status.ErrorCode = fmt.Sprintf("%d", r.ErrorCode)
 	status.Success = r.Success
 	return status, nil
 }

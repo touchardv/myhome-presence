@@ -1,6 +1,6 @@
 module github.com/touchardv/myhome-presence
 
-go 1.17
+go 1.18
 
 require (
 	github.com/bettercap/gatt v0.0.0-20210514133428-df6e615f2f67

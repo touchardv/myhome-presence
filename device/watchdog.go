@@ -76,10 +76,14 @@ func (w *watchdog) pingMissingDevices(r *Registry, now time.Time) {
 		if d.Status == model.StatusTracked {
 			elapsedMinutes := now.Sub(d.LastSeenAt).Minutes()
 			if elapsedMinutes >= 5 {
-				for _, t := range w.trackers {
-					t.Ping(d)
-				}
+				w.ping(&d)
 			}
 		}
+	}
+}
+
+func (w *watchdog) ping(d *model.Device) {
+	for _, t := range w.trackers {
+		t.Ping(*d)
 	}
 }

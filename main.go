@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -15,7 +16,17 @@ import (
 	"github.com/touchardv/myhome-presence/trackers/tplink"
 )
 
+var (
+	buildDate     = "undefined"
+	gitCommitHash = "undefined"
+	gitVersionTag = "undefined"
+)
+
 func main() {
+	fmt.Println("myhome-presence - version:", gitVersionTag)
+	fmt.Println("built date:", buildDate)
+	fmt.Println("git commit:", gitCommitHash)
+
 	daemonized := pflag.Bool("daemon", false, "Start as daemon")
 	logLevel := pflag.String("log-level", log.InfoLevel.String(), "The logging level (trace, debug, info...)")
 	configLocation := pflag.String("config-location", config.DefaultLocation, "The path to the directory where the configuration file is stored.")

@@ -1,6 +1,11 @@
 BINARY := myhome-presence
+BUILD_DATE := $(shell date +"%Y-%m-%dT%H:%M:%S-%Z")
 BUILD_DIR := $(shell pwd)/build
+GIT_COMMIT_HASH := $(shell git describe --dirty --always)
+GIT_VERSION_TAG := $(shell git tag --sort=-version:refname | head -n 1)
 SOURCES = $(shell find . -name '*.go')
+
+LD_ARGS := -ldflags "-X main.buildDate=$(BUILD_DATE) -X main.gitCommitHash=$(GIT_COMMIT_HASH) -X main.gitVersionTag=$(GIT_VERSION_TAG)"
 
 .PHONY: build
 build: $(BUILD_DIR)/$(BINARY)
@@ -9,10 +14,10 @@ $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
 $(BUILD_DIR)/$(BINARY): $(BUILD_DIR) $(SOURCES) api/openapi.yaml.tmpl
-	go build -o $(BUILD_DIR)/$(BINARY) .
+	go build $(LD_ARGS) -o $(BUILD_DIR)/$(BINARY) .
 
 $(BUILD_DIR)/$(BINARY)-linux-arm: $(SOURCES) api/openapi.yaml.tmpl
-	$(shell export GO111MODULE=on; export GOOS=linux; export GOARCH=arm; export GOARM=5; go build -o $(BUILD_DIR)/$(BINARY)-linux-arm .)
+	$(shell export GO111MODULE=on; export GOOS=linux; export GOARCH=arm; export GOARM=5; go build  $(LD_ARGS) -o $(BUILD_DIR)/$(BINARY)-linux-arm .)
 
 .PHONY: clean
 clean:

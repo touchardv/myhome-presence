@@ -35,6 +35,16 @@ func (c *apiContext) unregisterDevice(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (c *apiContext) contactDevice(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	err := c.registry.ContactDevice(vars["id"])
+	if err == nil {
+		w.WriteHeader(http.StatusAccepted)
+	} else {
+		http.NotFound(w, r)
+	}
+}
+
 func (c *apiContext) updateDevice(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	d := model.Device{}

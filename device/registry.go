@@ -66,6 +66,18 @@ func (r *Registry) AddDevice(d model.Device) error {
 	return nil
 }
 
+// ContactDevice attempts to contact a device given its identifier.
+func (r *Registry) ContactDevice(id string) error {
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
+
+	if d, found := r.devices[id]; found {
+		r.watchdog.ping(d)
+		return nil
+	}
+	return ErrNotFound
+}
+
 // FindDevice lookups a device given its identifier.
 func (r *Registry) FindDevice(id string) (model.Device, error) {
 	r.mutex.RLock()

@@ -16,14 +16,17 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-require github.com/JuulLabs-OSS/cbgo v0.0.2
+require (
+	github.com/JuulLabs-OSS/cbgo v0.0.2
+	github.com/muka/go-bluetooth v0.0.0-20220819143208-8b1989180f4c
+)
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/fatih/structs v1.1.0 // indirect
 	github.com/felixge/httpsnoop v1.0.2 // indirect
+	github.com/godbus/dbus/v5 v5.0.3 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
-	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )

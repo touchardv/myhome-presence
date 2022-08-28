@@ -10,6 +10,8 @@ LD_ARGS := -ldflags "-X main.buildDate=$(BUILD_DATE) -X main.gitCommitHash=$(GIT
 .PHONY: build
 build: $(BUILD_DIR)/$(BINARY)
 
+build-linux: $(BUILD_DIR)/$(BINARY)-linux-arm
+
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 

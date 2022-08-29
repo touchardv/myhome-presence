@@ -156,6 +156,7 @@ func (r *Registry) reportPresence(itf model.Interface) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
+	itf = sanitized(itf)
 	d := r.lookupDevice(itf)
 	if d == nil {
 		d = r.newDevice(itf)
@@ -173,6 +174,14 @@ func (r *Registry) reportPresence(itf model.Interface) {
 	elapsedMinutes := now.Sub(lastReportAt).Minutes()
 	if elapsedMinutes > 1 {
 		r.onPresenceUpdated(d)
+	}
+}
+
+func sanitized(in model.Interface) model.Interface {
+	return model.Interface{
+		Type:        in.Type,
+		MACAddress:  strings.ToLower(in.MACAddress),
+		IPv4Address: in.IPv4Address,
 	}
 }
 

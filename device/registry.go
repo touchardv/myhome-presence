@@ -106,13 +106,12 @@ func (r *Registry) newDevice(itf model.Interface) *model.Device {
 	d := model.Device{
 		Description: fmt.Sprintf("Discovered device at %s", now.Format(time.RFC822)),
 		Identifier:  fmt.Sprintf("device-%d-%d", now.Unix(), rand.Intn(1000)),
-		Interfaces:  make([]model.Interface, 1),
-		Present:     false,
+		Interfaces:  []model.Interface{itf},
+		Present:     true,
+		FirstSeenAt: now,
+		LastSeenAt:  now,
 		Status:      model.StatusDiscovered,
 	}
-	d.Interfaces[0] = itf
-	r.devices[d.Identifier] = &d
-	r.onAdded(&d)
 	log.Info("Discovered a new device: ", d.Identifier)
 	return &d
 }
@@ -160,20 +159,23 @@ func (r *Registry) reportPresence(itf model.Interface) {
 	d := r.lookupDevice(itf)
 	if d == nil {
 		d = r.newDevice(itf)
-	}
-	lastReportAt := d.LastSeenAt
+		r.devices[d.Identifier] = d
+	} else {
+		if d.Status == model.StatusTracked {
+			now := time.Now()
+			if !d.Present {
+				d.FirstSeenAt = now
+				d.Present = true
+				log.Info("Device '", d.Description, "' is present")
+			}
 
-	now := time.Now()
-	if !d.Present {
-		d.FirstSeenAt = now
-		d.Present = true
-		log.Info("Device '", d.Description, "' is present")
-	}
-	d.LastSeenAt = now
-
-	elapsedMinutes := now.Sub(lastReportAt).Minutes()
-	if elapsedMinutes > 1 {
-		r.onPresenceUpdated(d)
+			lastReportAt := d.LastSeenAt
+			d.LastSeenAt = now
+			elapsedMinutes := now.Sub(lastReportAt).Minutes()
+			if elapsedMinutes > 1 {
+				r.onPresenceUpdated(d)
+			}
+		}
 	}
 }
 

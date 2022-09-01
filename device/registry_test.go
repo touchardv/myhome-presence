@@ -17,6 +17,7 @@ var device = model.Device{
 		{Type: model.InterfaceBluetooth, MACAddress: "bb:11:00:00:00:00"},
 		{Type: model.InterfaceWifi, IPv4Address: "1.2.3.4"},
 	},
+	Status: model.StatusTracked,
 }
 
 var cfg = config.Config{
@@ -109,21 +110,13 @@ func TestNewDevice(t *testing.T) {
 	registry := NewRegistry(cfg)
 	d := registry.newDevice(model.Interface{Type: model.InterfaceBluetoothLowEnergy, MACAddress: "one"})
 
-	devices := registry.GetDevices()
-	assert.Equal(t, 2, len(devices))
-	assert.NotEmpty(t, d.Identifier, d.Description)
-	assert.Equal(t, model.InterfaceBluetoothLowEnergy, d.Interfaces[0].Type)
-	assert.Equal(t, "one", d.Interfaces[0].MACAddress)
+	assert.NotEmpty(t, d.Identifier)
+	assert.NotEmpty(t, d.Description)
 	assert.Equal(t, model.StatusDiscovered, d.Status)
-
-	d = registry.newDevice(model.Interface{Type: model.InterfaceBluetooth, MACAddress: "two"})
-	assert.Equal(t, model.InterfaceBluetooth, d.Interfaces[0].Type)
-	assert.Equal(t, "two", d.Interfaces[0].MACAddress)
-
-	d = registry.newDevice(model.Interface{Type: model.InterfaceWifi, IPv4Address: "three"})
+	assert.True(t, d.Present)
 	assert.Equal(t, 1, len(d.Interfaces))
-	assert.Equal(t, model.InterfaceWifi, d.Interfaces[0].Type)
-	assert.Equal(t, "three", d.Interfaces[0].IPv4Address)
+	assert.Equal(t, "one", d.Interfaces[0].MACAddress)
+	assert.Equal(t, model.InterfaceBluetoothLowEnergy, d.Interfaces[0].Type)
 }
 
 func TestLookupDevice(t *testing.T) {
@@ -145,7 +138,7 @@ func TestLookupDevice(t *testing.T) {
 	assert.Nil(t, d)
 }
 
-func TestRemoveDevicee(t *testing.T) {
+func TestRemoveDevice(t *testing.T) {
 	registry := NewRegistry(cfg)
 
 	registry.RemoveDevice("foo")

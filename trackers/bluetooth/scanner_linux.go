@@ -58,6 +58,9 @@ func (mgr *btLinuxManager) scan(report device.ReportPresenceFunc, ctx context.Co
 			for _, u := range dev.Properties.UUIDs {
 				log.Debug("UUIDs: ", u)
 			}
+			for k, v := range dev.Properties.AdvertisingData {
+				log.Debug("AdvertisingData: ", k, " -> ", v)
+			}
 			for uuid, d := range dev.Properties.ServiceData {
 				log.Debug("ServiceData: ", uuid, " -> ", d)
 			}

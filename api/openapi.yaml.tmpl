@@ -164,6 +164,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Interface'
+        created_at:
+          description: The device creation date and time (assigned by the service at registration or discovery).
+          type: string
+          format: date-time
         first_seen_at:
           type: string
           format: date-time
@@ -174,7 +178,7 @@ components:
           type: boolean
         status:
           type: object
-          example: tracked
+          $ref: '#/components/schemas/DeviceStatus'
     Interface:
       required:
       - Type

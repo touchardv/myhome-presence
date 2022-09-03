@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/touchardv/myhome-presence/model"
@@ -21,6 +22,14 @@ func load(location string, name string) ([]model.Device, error) {
 	devices := make([]model.Device, 10)
 	if err == nil {
 		err = yaml.Unmarshal(content, &devices)
+	}
+
+	// "data migration" for setting a created_at value
+	now := time.Now()
+	for i := range devices {
+		if devices[i].CreatedAt.IsZero() {
+			devices[i].CreatedAt = now
+		}
 	}
 	return devices, err
 }

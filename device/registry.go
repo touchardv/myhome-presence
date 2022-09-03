@@ -60,6 +60,7 @@ func (r *Registry) AddDevice(d model.Device) error {
 	if _, found := r.devices[d.Identifier]; found {
 		return ErrIDAlreadyTaken
 	}
+	d.CreatedAt = time.Now()
 	r.devices[d.Identifier] = &d
 	r.onAdded(&d)
 	log.Info("Device added: ", d.Identifier)
@@ -110,6 +111,7 @@ func (r *Registry) newDevice(itf model.Interface) *model.Device {
 		Identifier:  fmt.Sprintf("device-%d-%d", now.Unix(), rand.Intn(1000)),
 		Interfaces:  []model.Interface{itf},
 		Present:     true,
+		CreatedAt:   now,
 		FirstSeenAt: now,
 		LastSeenAt:  now,
 		Status:      model.StatusDiscovered,
@@ -217,8 +219,8 @@ func (r *Registry) UpdateDevice(id string, ud model.Device) (model.Device, error
 		return model.Device{}, ErrInvalidID
 	}
 
+	// identifier, creation date are left untouched
 	d.Description = ud.Description
-	d.Identifier = ud.Identifier
 	d.Interfaces = ud.Interfaces
 	d.Status = ud.Status
 	return *d, nil

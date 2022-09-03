@@ -31,6 +31,7 @@ func TestAddDevice(t *testing.T) {
 
 	devices := registry.GetDevices(model.StatusUndefined)
 	assert.Equal(t, 2, len(devices))
+	assert.NotZero(t, devices[1].CreatedAt)
 }
 
 func TestFindAnExistingDevice(t *testing.T) {
@@ -116,7 +117,9 @@ func TestReportPresenceOfANewDevice(t *testing.T) {
 	assert.Equal(t, 1, len(devices))
 
 	assert.True(t, devices[0].Present)
-	assert.False(t, devices[0].LastSeenAt.IsZero())
+	assert.NotZero(t, devices[0].CreatedAt)
+	assert.NotZero(t, devices[0].FirstSeenAt)
+	assert.NotZero(t, devices[0].LastSeenAt)
 	assert.Equal(t, model.InterfaceBluetoothLowEnergy, devices[0].Interfaces[0].Type)
 	assert.Equal(t, "12:34:56:78:9a", devices[0].Interfaces[0].MACAddress)
 	assert.Equal(t, model.StatusDiscovered, devices[0].Status)

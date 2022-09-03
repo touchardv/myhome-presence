@@ -9,7 +9,7 @@ info:
   license:
     name: MIT
     url: http://opensource.org/licenses/MIT
-  version: 0.0.2
+  version: 0.0.3
 servers:
 - url: http://{{ .address }}:{{ .port }}/api
 paths:
@@ -17,8 +17,16 @@ paths:
     get:
       tags:
       - devices
-      summary: List all known device(s).
-      operationId: listDevices
+      summary: Query known devices, optionally specifying to filter by status
+      operationId: queryDevices
+      parameters:
+      - description: The device status to filter on
+        in: query
+        name: status
+        required: false
+        schema:
+          type: object
+          $ref: '#/components/schemas/DeviceStatus'
       responses:
         200:
           description: A list of devices
@@ -188,6 +196,10 @@ components:
         InterfaceType defines the type of physical/software interface
       enum: [unknown, ethernet, wifi, ipv4, bluetooth, ble]
       example: ethernet
+    DeviceStatus:
+      type: string
+      description: DeviceStatus defines the status of a device
+      enum: [undefined, discovered, ignored, tracked]
   responses:
     deviceArray:
       description: A list of devices

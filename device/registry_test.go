@@ -29,7 +29,7 @@ func TestAddDevice(t *testing.T) {
 	registry := NewRegistry(cfg)
 	registry.AddDevice(model.Device{Identifier: "bar"})
 
-	devices := registry.GetDevices()
+	devices := registry.GetDevices(model.StatusUndefined)
 	assert.Equal(t, 2, len(devices))
 }
 
@@ -51,15 +51,31 @@ func TestFindAnUnknownDevice(t *testing.T) {
 
 func TestGetDevices(t *testing.T) {
 	registry := NewRegistry(cfg)
-	devices := registry.GetDevices()
+	registry.AddDevice(model.Device{Identifier: "discobar", Status: model.StatusDiscovered})
+	registry.AddDevice(model.Device{Identifier: "bad", Status: model.StatusIgnored})
 
+	devices := registry.GetDevices(model.StatusUndefined)
+	assert.Equal(t, 3, len(devices))
+	assert.Equal(t, "foo", devices[0].Identifier)
+	assert.Equal(t, "discobar", devices[1].Identifier)
+	assert.Equal(t, "bad", devices[2].Identifier)
+
+	devices = registry.GetDevices(model.StatusTracked)
 	assert.Equal(t, 1, len(devices))
 	assert.Equal(t, "foo", devices[0].Identifier)
+
+	devices = registry.GetDevices(model.StatusDiscovered)
+	assert.Equal(t, 1, len(devices))
+	assert.Equal(t, "discobar", devices[0].Identifier)
+
+	devices = registry.GetDevices(model.StatusIgnored)
+	assert.Equal(t, 1, len(devices))
+	assert.Equal(t, "bad", devices[0].Identifier)
 }
 
 func TestReportPresenceOfAExistingDevice(t *testing.T) {
 	registry := NewRegistry(cfg)
-	devices := registry.GetDevices()
+	devices := registry.GetDevices(model.StatusUndefined)
 
 	assert.Equal(t, 1, len(devices))
 	assert.False(t, devices[0].Present)
@@ -68,7 +84,7 @@ func TestReportPresenceOfAExistingDevice(t *testing.T) {
 	// matching the interface type (via IP address)
 	registry.reportPresence(model.Interface{Type: model.InterfaceWifi, IPv4Address: "1.2.3.4"})
 
-	devices = registry.GetDevices()
+	devices = registry.GetDevices(model.StatusUndefined)
 	assert.Equal(t, 1, len(devices))
 
 	assert.True(t, devices[0].Present)
@@ -77,13 +93,13 @@ func TestReportPresenceOfAExistingDevice(t *testing.T) {
 
 	// matching the interface type (via uppercased MAC address)
 	registry.reportPresence(model.Interface{Type: model.InterfaceBluetoothLowEnergy, MACAddress: "BB:77:33:00:00:00"})
-	devices = registry.GetDevices()
+	devices = registry.GetDevices(model.StatusUndefined)
 	assert.Equal(t, 1, len(devices))
 
 	// with an unknown interface type
 	registry.reportPresence(model.Interface{Type: model.InterfaceUnknown, IPv4Address: "1.2.3.4"})
 
-	devices = registry.GetDevices()
+	devices = registry.GetDevices(model.StatusUndefined)
 	assert.Equal(t, 1, len(devices))
 
 	assert.True(t, devices[0].Present)
@@ -96,7 +112,7 @@ func TestReportPresenceOfANewDevice(t *testing.T) {
 
 	registry.reportPresence(model.Interface{Type: model.InterfaceBluetoothLowEnergy, MACAddress: "12:34:56:78:9A"})
 
-	devices := registry.GetDevices()
+	devices := registry.GetDevices(model.StatusUndefined)
 	assert.Equal(t, 1, len(devices))
 
 	assert.True(t, devices[0].Present)
@@ -142,7 +158,7 @@ func TestRemoveDevice(t *testing.T) {
 	registry := NewRegistry(cfg)
 
 	registry.RemoveDevice("foo")
-	devices := registry.GetDevices()
+	devices := registry.GetDevices(model.StatusUndefined)
 	assert.Equal(t, 0, len(devices))
 }
 

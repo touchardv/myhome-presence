@@ -90,13 +90,15 @@ func (r *Registry) FindDevice(id string) (model.Device, error) {
 }
 
 // GetDevices returns all known devices.
-func (r *Registry) GetDevices() []model.Device {
+func (r *Registry) GetDevices(status model.Status) []model.Device {
 	r.mutex.RLock()
 	defer r.mutex.RUnlock()
 
 	devices := make([]model.Device, 0)
 	for _, d := range r.devices {
-		devices = append(devices, *d)
+		if status == model.StatusUndefined || status == d.Status {
+			devices = append(devices, *d)
+		}
 	}
 	return devices
 }

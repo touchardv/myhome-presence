@@ -11,6 +11,7 @@ import (
 	"github.com/touchardv/myhome-presence/api"
 	"github.com/touchardv/myhome-presence/config"
 	"github.com/touchardv/myhome-presence/device"
+	"github.com/touchardv/myhome-presence/model"
 	"github.com/touchardv/myhome-presence/trackers/bluetooth"
 	"github.com/touchardv/myhome-presence/trackers/ipv4"
 	"github.com/touchardv/myhome-presence/trackers/tplink"
@@ -51,7 +52,7 @@ func main() {
 
 	server.Stop()
 	registry.Stop()
-	config.Save(registry.GetDevices())
+	config.Save(registry.GetDevices(model.StatusUndefined))
 	log.Info("...Stopped")
 	log.Exit(0)
 }

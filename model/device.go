@@ -38,6 +38,14 @@ var stringToStatus = map[string]Status{
 	"tracked":    StatusTracked,
 }
 
+func StatusOf(s string) Status {
+	if t, ok := stringToStatus[s]; ok {
+		return t
+	} else {
+		return StatusUndefined
+	}
+}
+
 func (s Status) String() string {
 	return statusToString[s]
 }

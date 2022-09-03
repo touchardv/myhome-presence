@@ -75,7 +75,9 @@ func (c *apiContext) findDevice(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (c *apiContext) listDevices(w http.ResponseWriter, r *http.Request) {
+func (c *apiContext) queryDevices(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(c.registry.GetDevices())
+	q := r.URL.Query()
+	status := model.StatusOf(q.Get("status"))
+	json.NewEncoder(w).Encode(c.registry.GetDevices(status))
 }

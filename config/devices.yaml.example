@@ -12,10 +12,10 @@
   identifier: my-ip-camera
   interfaces:
     - type: wifi
-      macaddress: CC:AA:DD:FF:AA:BB
+      macaddress: cc:aa:dd:ff:aa:bb
       ipv4address: 10.1.2.3
     - type: ethernet
-      macaddress: AA:BB:CC:DD:FF:EE
+      macaddress: aa:bb:cc:dd:ff:ee
       ipv4address: 10.2.3.4
   status: discovered
   present: true

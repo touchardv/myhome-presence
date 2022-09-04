@@ -80,11 +80,13 @@ func (t *tplinkTracker) Loop(deviceReport device.ReportPresenceFunc, ctx context
 			}
 			log.Debugf("[%s] detected %d wired device(s)", t.name, len(r.Data.WiredDevices))
 			for _, device := range r.Data.WiredDevices {
-				deviceReport(model.Interface{Type: model.InterfaceEthernet, IPv4Address: device.IPAddress})
+				itf := model.Interface{Type: model.InterfaceEthernet, IPv4Address: device.IPAddress}
+				deviceReport(itf, nil)
 			}
 			log.Debugf("[%s] detected %d wireless device(s)", t.name, len(r.Data.WirelessDevices))
 			for _, device := range r.Data.WirelessDevices {
-				deviceReport(model.Interface{Type: model.InterfaceWifi, IPv4Address: device.IPAddress})
+				itf := model.Interface{Type: model.InterfaceWifi, IPv4Address: device.IPAddress}
+				deviceReport(itf, nil)
 			}
 		}
 	}

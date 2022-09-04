@@ -83,7 +83,7 @@ func TestReportPresenceOfAExistingDevice(t *testing.T) {
 	assert.True(t, devices[0].LastSeenAt.IsZero())
 
 	// matching the interface type (via IP address)
-	registry.reportPresence(model.Interface{Type: model.InterfaceWifi, IPv4Address: "1.2.3.4"})
+	registry.reportPresence(model.Interface{Type: model.InterfaceWifi, IPv4Address: "1.2.3.4"}, nil)
 
 	devices = registry.GetDevices(model.StatusUndefined)
 	assert.Equal(t, 1, len(devices))
@@ -93,12 +93,12 @@ func TestReportPresenceOfAExistingDevice(t *testing.T) {
 	assert.False(t, devices[0].LastSeenAt.IsZero())
 
 	// matching the interface type (via uppercased MAC address)
-	registry.reportPresence(model.Interface{Type: model.InterfaceBluetoothLowEnergy, MACAddress: "BB:77:33:00:00:00"})
+	registry.reportPresence(model.Interface{Type: model.InterfaceBluetoothLowEnergy, MACAddress: "BB:77:33:00:00:00"}, nil)
 	devices = registry.GetDevices(model.StatusUndefined)
 	assert.Equal(t, 1, len(devices))
 
 	// with an unknown interface type
-	registry.reportPresence(model.Interface{Type: model.InterfaceUnknown, IPv4Address: "1.2.3.4"})
+	registry.reportPresence(model.Interface{Type: model.InterfaceUnknown, IPv4Address: "1.2.3.4"}, nil)
 
 	devices = registry.GetDevices(model.StatusUndefined)
 	assert.Equal(t, 1, len(devices))
@@ -111,7 +111,7 @@ func TestReportPresenceOfAExistingDevice(t *testing.T) {
 func TestReportPresenceOfANewDevice(t *testing.T) {
 	registry := NewRegistry(config.Config{Devices: map[string]*model.Device{}})
 
-	registry.reportPresence(model.Interface{Type: model.InterfaceBluetoothLowEnergy, MACAddress: "12:34:56:78:9A"})
+	registry.reportPresence(model.Interface{Type: model.InterfaceBluetoothLowEnergy, MACAddress: "12:34:56:78:9A"}, nil)
 
 	devices := registry.GetDevices(model.StatusUndefined)
 	assert.Equal(t, 1, len(devices))

@@ -155,7 +155,7 @@ func (r *Registry) RemoveDevice(id string) error {
 	return ErrNotFound
 }
 
-func (r *Registry) reportPresence(itf model.Interface) {
+func (r *Registry) reportPresence(itf model.Interface, optData map[string]string) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 

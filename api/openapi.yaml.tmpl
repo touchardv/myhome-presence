@@ -176,6 +176,10 @@ components:
           format: date-time
         present:
           type: boolean
+        properties:
+          type: object
+          additionalProperties:
+            type: string
         status:
           type: object
           $ref: '#/components/schemas/DeviceStatus'

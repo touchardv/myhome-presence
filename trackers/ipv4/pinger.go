@@ -60,7 +60,8 @@ func (t *ipTracker) receiveLoop(deviceReport device.ReportPresenceFunc) {
 		switch addr := remoteAddr.(type) {
 		case *net.UDPAddr:
 			log.Debug("Got reply from: ", addr.IP.String())
-			deviceReport(model.Interface{Type: model.InterfaceUnknown, IPv4Address: addr.IP.String()})
+			itf := model.Interface{Type: model.InterfaceUnknown, IPv4Address: addr.IP.String()}
+			deviceReport(itf, nil)
 		}
 	}
 	log.Debug("Done receiving ping packets")

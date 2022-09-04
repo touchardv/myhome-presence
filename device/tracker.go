@@ -10,7 +10,13 @@ import (
 )
 
 // ReportPresenceFunc is a function that can be used by a Tracker to report the presence of a given device interface.
-type ReportPresenceFunc func(model.Interface)
+// Optionally some data related to the inteface/device may be provided.
+type ReportPresenceFunc func(model.Interface, map[string]string)
+
+const (
+	ReportDataSuggestedIdentifier  = "Identifier"
+	ReportDataSuggestedDescription = "Description"
+)
 
 // Tracker tracks the presence of devices.
 type Tracker interface {

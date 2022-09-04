@@ -14,8 +14,7 @@ import (
 )
 
 func TestDeviceRegistration(t *testing.T) {
-	devices := make(map[string]*model.Device, 0)
-	registry := device.NewRegistry(config.Config{Devices: devices})
+	registry := device.NewRegistry(config.Config{Devices: map[string]*model.Device{}})
 	server := NewServer(config.Server{}, registry)
 
 	var jsonStr = []byte(`{}`)
@@ -28,6 +27,14 @@ func TestDeviceRegistration(t *testing.T) {
 	response = performRequest(server, req)
 	assert.Equal(t, http.StatusCreated, response.Code)
 	assert.Equal(t, 1, len(registry.GetDevices(model.StatusUndefined)))
+
+	jsonStr = []byte(`{"identifier": "bar", "properties": { "key": "value" }, "status": "tracked"}`)
+	req, _ = http.NewRequest("POST", "/api/devices", bytes.NewBuffer(jsonStr))
+	response = performRequest(server, req)
+	assert.Equal(t, http.StatusCreated, response.Code)
+	devices := registry.GetDevices(model.StatusTracked)
+	assert.Equal(t, 1, len(devices))
+	assert.Equal(t, "value", devices[0].Properties["key"])
 }
 
 func TestFindDevice(t *testing.T) {

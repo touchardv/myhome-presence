@@ -207,7 +207,23 @@ func TestUpdateDevice(t *testing.T) {
 	assert.Equal(t, ErrNotFound, err)
 }
 
-func TestUpdateDevicesPresence(t *testing.T) {
+func TestUpdateDiscoveredDevicePresence(t *testing.T) {
+	registry := NewRegistry(cfg)
+	device.LastSeenAt = time.Now()
+	device.Present = true
+	device.Status = model.StatusDiscovered
+
+	registry.UpdateDevicesPresence(time.Now().Add(5 * time.Minute))
+	assert.True(t, device.Present)
+
+	registry.UpdateDevicesPresence(time.Now().Add(11 * time.Minute))
+	assert.False(t, device.Present)
+
+	registry.UpdateDevicesPresence(time.Now().Add(61 * time.Minute))
+	assert.Equal(t, 0, len(registry.devices))
+}
+
+func TestUpdateTrackedDevicePresence(t *testing.T) {
 	registry := NewRegistry(cfg)
 	device.LastSeenAt = time.Now()
 	device.Present = true

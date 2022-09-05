@@ -105,13 +105,13 @@ func (r *Registry) GetDevices(status model.Status) []model.Device {
 
 func (r *Registry) newDevice(itf model.Interface, optData map[string]string) *model.Device {
 	now := time.Now()
-	ID := identifier(optData)
-	if _, found := r.devices[ID]; found {
-		ID = fmt.Sprintf("%s-%s", ID, now.Format(time.RFC3339))
+	id := identifier(optData)
+	if _, found := r.devices[id]; found {
+		id = fmt.Sprintf("%s-%s", id, now.Format(time.RFC3339))
 	}
 	return &model.Device{
 		Description: description(optData, now),
-		Identifier:  ID,
+		Identifier:  id,
 		Interfaces:  []model.Interface{itf},
 		Present:     true,
 		Properties:  optData,
@@ -133,8 +133,8 @@ func description(optData map[string]string, ts time.Time) string {
 
 func identifier(optData map[string]string) string {
 	if optData != nil {
-		if ID, ok := optData[ReportDataSuggestedIdentifier]; ok {
-			return strings.ToLower(ID)
+		if id, ok := optData[ReportDataSuggestedIdentifier]; ok {
+			return strings.ToLower(id)
 		}
 	}
 	return "unidentified-device"
@@ -196,16 +196,20 @@ func (r *Registry) reportPresence(itf model.Interface, optData map[string]string
 				}
 			}
 		}
+		wasNotPresent := !d.Present
+		lastReportAt := d.LastSeenAt
+
+		now := time.Now()
+		if wasNotPresent {
+			d.FirstSeenAt = now
+			d.Present = true
+		}
+		d.LastSeenAt = now
+
 		if d.Status == model.StatusTracked {
-			now := time.Now()
-			if !d.Present {
-				d.FirstSeenAt = now
-				d.Present = true
+			if wasNotPresent {
 				log.Info("Device '", d.Description, "' is present")
 			}
-
-			lastReportAt := d.LastSeenAt
-			d.LastSeenAt = now
 			elapsedMinutes := now.Sub(lastReportAt).Minutes()
 			if elapsedMinutes > 1 {
 				r.onPresenceUpdated(d)
@@ -262,9 +266,19 @@ func (r *Registry) UpdateDevicesPresence(t time.Time) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
+	removedIDs := make([]string, 0)
 	for _, d := range r.devices {
-		if d.Status == model.StatusTracked {
-			elapsedMinutes := t.Sub(d.LastSeenAt).Minutes()
+		elapsedMinutes := t.Sub(d.LastSeenAt).Minutes()
+
+		switch d.Status {
+		case model.StatusDiscovered:
+			if elapsedMinutes > 60 {
+				removedIDs = append(removedIDs, d.Identifier)
+			} else if elapsedMinutes >= 10 {
+				d.Present = false
+			}
+
+		case model.StatusTracked:
 			if elapsedMinutes >= 10 {
 				if d.Present {
 					d.Present = false
@@ -273,5 +287,10 @@ func (r *Registry) UpdateDevicesPresence(t time.Time) {
 				}
 			}
 		}
+	}
+
+	for _, id := range removedIDs {
+		delete(r.devices, id)
+		log.Debug("Discovered device automatically removed: ", id)
 	}
 }

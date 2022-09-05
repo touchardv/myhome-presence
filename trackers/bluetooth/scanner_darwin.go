@@ -2,6 +2,8 @@ package bluetooth
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/JuulLabs-OSS/cbgo"
@@ -69,18 +71,30 @@ func (mgr *btDarwinManager) CentralManagerWillRestoreState(cmgr cbgo.CentralMana
 
 func (mgr *btDarwinManager) DidDiscoverPeripheral(cmgr cbgo.CentralManager, p cbgo.Peripheral, f cbgo.AdvFields, rssi int) {
 	log.Debug("DidDiscoverPeripheral")
-	log.Debug("Identifier: ", p.Identifier(), " Name: ", p.Name(), " LocalName: ", f.LocalName)
-	for _, u := range f.ServiceUUIDs {
-		log.Debug("ServiceUUID: ", u)
+	props := make(map[string]string)
+	props[device.ReportDataSuggestedIdentifier] = p.Identifier().String()
+
+	v := strings.TrimSpace(p.Name())
+	if len(v) > 0 {
+		props[device.ReportDataSuggestedDescription] = v
+	} else {
+		v = strings.TrimSpace(f.LocalName)
+		if len(v) > 0 {
+			props[device.ReportDataSuggestedDescription] = v
+		}
+	}
+
+	for i, u := range f.ServiceUUIDs {
+		props[fmt.Sprintf("ServiceUUID-%d", i)] = u.String()
 	}
 	for _, data := range f.ServiceData {
-		log.Debug("ServiceData: ", data.UUID, " -> ", data.Data)
+		props[fmt.Sprintf("ServiceData-%s", data.UUID.String())] = string(data.Data)
 	}
 	itf := model.Interface{
 		Type:       model.InterfaceBluetoothLowEnergy,
 		MACAddress: p.Identifier().String(), // on OSX this is not a MACAddress but a UUID
 	}
-	mgr.report(itf, nil)
+	mgr.report(itf, props)
 }
 
 func (mgr *btDarwinManager) stopScan() {

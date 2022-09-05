@@ -1,6 +1,7 @@
 package device
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -57,9 +58,6 @@ func TestGetDevices(t *testing.T) {
 
 	devices := registry.GetDevices(model.StatusUndefined)
 	assert.Equal(t, 3, len(devices))
-	assert.Equal(t, "foo", devices[0].Identifier)
-	assert.Equal(t, "discobar", devices[1].Identifier)
-	assert.Equal(t, "bad", devices[2].Identifier)
 
 	devices = registry.GetDevices(model.StatusTracked)
 	assert.Equal(t, 1, len(devices))
@@ -127,7 +125,7 @@ func TestReportPresenceOfANewDevice(t *testing.T) {
 
 func TestNewDevice(t *testing.T) {
 	registry := NewRegistry(cfg)
-	d := registry.newDevice(model.Interface{Type: model.InterfaceBluetoothLowEnergy, MACAddress: "one"})
+	d := registry.newDevice(model.Interface{Type: model.InterfaceBluetoothLowEnergy, MACAddress: "one"}, nil)
 
 	assert.NotEmpty(t, d.Identifier)
 	assert.NotEmpty(t, d.Description)
@@ -136,6 +134,17 @@ func TestNewDevice(t *testing.T) {
 	assert.Equal(t, 1, len(d.Interfaces))
 	assert.Equal(t, "one", d.Interfaces[0].MACAddress)
 	assert.Equal(t, model.InterfaceBluetoothLowEnergy, d.Interfaces[0].Type)
+
+	d = registry.newDevice(model.Interface{Type: model.InterfaceBluetoothLowEnergy, MACAddress: "two"}, map[string]string{
+		ReportDataSuggestedIdentifier: "baz",
+	})
+	assert.Equal(t, "baz", d.Identifier) // no ID conflict
+
+	d = registry.newDevice(model.Interface{Type: model.InterfaceBluetoothLowEnergy, MACAddress: "three"}, map[string]string{
+		ReportDataSuggestedIdentifier: "foo",
+	})
+	assert.NotEqual(t, "foo", d.Identifier)
+	assert.True(t, strings.HasPrefix(d.Identifier, "foo-")) // ID exists => suffix is appended
 }
 
 func TestLookupDevice(t *testing.T) {

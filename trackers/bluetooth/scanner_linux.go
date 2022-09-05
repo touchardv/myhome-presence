@@ -2,6 +2,8 @@ package bluetooth
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/muka/go-bluetooth/api"
 	"github.com/muka/go-bluetooth/bluez/profile/adapter"
@@ -54,20 +56,30 @@ func (mgr *btLinuxManager) scan(report device.ReportPresenceFunc, ctx context.Co
 				continue
 			}
 
-			log.Debug("Address: ", dev.Properties.Address, " AddressType: ", dev.Properties.AddressType, " Name: ", dev.Properties.Name, " Alias: ", dev.Properties.Alias)
-			for _, u := range dev.Properties.UUIDs {
-				log.Debug("UUIDs: ", u)
+			props := make(map[string]string)
+			props[device.ReportDataSuggestedIdentifier] = dev.Properties.Address
+			props["AddressType"] = dev.Properties.AddressType
+
+			v := strings.TrimSpace(dev.Properties.Name)
+			if len(v) > 0 {
+				props[device.ReportDataSuggestedDescription] = v
+			} else {
+				v = strings.TrimSpace(dev.Properties.Alias)
+				if len(v) > 0 {
+					props[device.ReportDataSuggestedDescription] = v
+				}
 			}
-			for k, v := range dev.Properties.AdvertisingData {
-				log.Debug("AdvertisingData: ", k, " -> ", v)
+
+			for i, u := range dev.Properties.UUIDs {
+				props[fmt.Sprintf("ServiceUUID-%d", i)] = u
 			}
 			for uuid, d := range dev.Properties.ServiceData {
-				log.Debug("ServiceData: ", uuid, " -> ", d)
+				props[fmt.Sprintf("ServiceData-%s", uuid)] = fmt.Sprint(d)
 			}
 			report(model.Interface{
 				Type:       model.InterfaceBluetoothLowEnergy,
 				MACAddress: dev.Properties.Address,
-			})
+			}, props)
 		}
 	}()
 

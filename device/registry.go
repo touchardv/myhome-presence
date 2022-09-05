@@ -3,7 +3,6 @@ package device
 import (
 	"errors"
 	"fmt"
-	"math/rand"
 	"strings"
 	"sync"
 	"time"
@@ -104,20 +103,41 @@ func (r *Registry) GetDevices(status model.Status) []model.Device {
 	return devices
 }
 
-func (r *Registry) newDevice(itf model.Interface) *model.Device {
+func (r *Registry) newDevice(itf model.Interface, optData map[string]string) *model.Device {
 	now := time.Now()
-	d := model.Device{
-		Description: fmt.Sprintf("Discovered device at %s", now.Format(time.RFC822)),
-		Identifier:  fmt.Sprintf("device-%d-%d", now.Unix(), rand.Intn(1000)),
+	ID := identifier(optData)
+	if _, found := r.devices[ID]; found {
+		ID = fmt.Sprintf("%s-%s", ID, now.Format(time.RFC3339))
+	}
+	return &model.Device{
+		Description: description(optData, now),
+		Identifier:  ID,
 		Interfaces:  []model.Interface{itf},
 		Present:     true,
+		Properties:  optData,
 		CreatedAt:   now,
 		FirstSeenAt: now,
 		LastSeenAt:  now,
 		Status:      model.StatusDiscovered,
 	}
-	log.Info("Discovered a new device: ", d.Identifier)
-	return &d
+}
+
+func description(optData map[string]string, ts time.Time) string {
+	if optData != nil {
+		if description, ok := optData[ReportDataSuggestedDescription]; ok {
+			return description
+		}
+	}
+	return fmt.Sprintf("Unidentified device seen at %s", ts.Format(time.RFC822))
+}
+
+func identifier(optData map[string]string) string {
+	if optData != nil {
+		if ID, ok := optData[ReportDataSuggestedIdentifier]; ok {
+			return strings.ToLower(ID)
+		}
+	}
+	return "unidentified-device"
 }
 
 func (r *Registry) lookupDevice(itf model.Interface) *model.Device {
@@ -162,9 +182,20 @@ func (r *Registry) reportPresence(itf model.Interface, optData map[string]string
 	itf = sanitized(itf)
 	d := r.lookupDevice(itf)
 	if d == nil {
-		d = r.newDevice(itf)
+		d = r.newDevice(itf, optData)
 		r.devices[d.Identifier] = d
+		log.Info("Discovered a new device: ", d.Identifier)
 	} else {
+		// Merge device properties
+		if optData != nil {
+			if d.Properties == nil {
+				d.Properties = optData
+			} else {
+				for k, v := range optData {
+					d.Properties[k] = v
+				}
+			}
+		}
 		if d.Status == model.StatusTracked {
 			now := time.Now()
 			if !d.Present {
@@ -222,6 +253,7 @@ func (r *Registry) UpdateDevice(id string, ud model.Device) (model.Device, error
 	// identifier, creation date are left untouched
 	d.Description = ud.Description
 	d.Interfaces = ud.Interfaces
+	d.Properties = ud.Properties
 	d.Status = ud.Status
 	return *d, nil
 }

@@ -209,10 +209,13 @@ func (r *Registry) reportPresence(itf model.Interface, optData map[string]string
 		if d.Status == model.StatusTracked {
 			if wasNotPresent {
 				log.Info("Device '", d.Description, "' is present")
-			}
-			elapsedMinutes := now.Sub(lastReportAt).Minutes()
-			if elapsedMinutes > 1 {
 				r.onPresenceUpdated(d)
+			} else {
+				// limit the number of update events
+				elapsedMinutes := now.Sub(lastReportAt).Minutes()
+				if elapsedMinutes > 1 {
+					r.onUpdated(d)
+				}
 			}
 		}
 	}
@@ -259,6 +262,7 @@ func (r *Registry) UpdateDevice(id string, ud model.Device) (model.Device, error
 	d.Interfaces = ud.Interfaces
 	d.Properties = ud.Properties
 	d.Status = ud.Status
+	r.onUpdated(d)
 	return *d, nil
 }
 

@@ -12,6 +12,7 @@ const (
 	EventTypeUndefined EventType = iota
 	EventTypeAdded
 	EventTypePresenceUpdated
+	EventTypeUpdated
 	EventTypeRemoved
 )
 
@@ -19,6 +20,7 @@ var eventTypeToString = map[EventType]string{
 	EventTypeUndefined:       "undefined",
 	EventTypeAdded:           "added",
 	EventTypePresenceUpdated: "presenceupdated",
+	EventTypeUpdated:         "updated",
 	EventTypeRemoved:         "removed",
 }
 
@@ -26,6 +28,7 @@ var stringToEventType = map[string]EventType{
 	"undefined":       EventTypeUndefined,
 	"added":           EventTypeAdded,
 	"presenceupdated": EventTypePresenceUpdated,
+	"updated":         EventTypeUpdated,
 	"removed":         EventTypeRemoved,
 }
 
@@ -68,6 +71,13 @@ type DevicePresenceUpdated struct {
 	Identifier string    `json:"identifier"`
 	Present    bool      `json:"present"`
 	LastSeenAt time.Time `json:"last_seen_at"`
+}
+
+type DeviceUpdated struct {
+	Description string    `json:"description"`
+	Identifier  string    `json:"identifier"`
+	Present     bool      `json:"present"`
+	LastSeenAt  time.Time `json:"last_seen_at"`
 }
 
 type DeviceRemoved struct {

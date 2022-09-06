@@ -66,6 +66,15 @@ func (r *Registry) onPresenceUpdated(d *model.Device) {
 	})
 }
 
+func (r *Registry) onUpdated(d *model.Device) {
+	r.publish(model.EventTypeUpdated, model.DeviceUpdated{
+		Identifier:  d.Identifier,
+		Description: d.Description,
+		Present:     d.Present,
+		LastSeenAt:  d.LastSeenAt,
+	})
+}
+
 func (r *Registry) onRemoved(id string) {
 	r.publish(model.EventTypeRemoved, model.DeviceRemoved{
 		Identifier: id,

@@ -27,12 +27,15 @@ var cfg = config.Config{
 }
 
 func TestAddDevice(t *testing.T) {
-	registry := NewRegistry(cfg)
-	registry.AddDevice(model.Device{Identifier: "bar"})
+	registry := NewRegistry(config.Config{})
+	registry.AddDevice(model.Device{Identifier: "bar", Status: model.StatusIgnored})
 
-	devices := registry.GetDevices(model.StatusUndefined)
-	assert.Equal(t, 2, len(devices))
-	assert.NotZero(t, devices[1].CreatedAt)
+	devices := registry.GetDevices(model.StatusIgnored)
+	assert.Equal(t, 1, len(devices))
+	assert.NotZero(t, devices[0].CreatedAt)
+	assert.Zero(t, devices[0].FirstSeenAt)
+	assert.Zero(t, devices[0].LastSeenAt)
+	assert.False(t, devices[0].Present)
 }
 
 func TestFindAnExistingDevice(t *testing.T) {

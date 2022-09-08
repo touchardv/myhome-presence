@@ -68,7 +68,7 @@ func (s *Status) UnmarshalJSON(b []byte) error {
 	if t, ok := stringToStatus[j]; ok {
 		*s = t
 	} else {
-		*s = StatusUndefined
+		return ErrInvalidDeviceStatus
 	}
 	return nil
 }

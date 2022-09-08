@@ -17,22 +17,24 @@ func TestDeviceRegistration(t *testing.T) {
 	registry := device.NewRegistry(config.Config{Devices: map[string]*model.Device{}})
 	server := NewServer(config.Server{}, registry)
 
-	var jsonStr = []byte(`{}`)
-	req, _ := http.NewRequest("POST", "/api/devices", bytes.NewBuffer(jsonStr))
-	response := performRequest(server, req)
+	response := performRequest(server, registerRequest(`{}`))
 	assert.Equal(t, http.StatusBadRequest, response.Code)
 
-	jsonStr = []byte(`{"identifier": "foo"}`)
-	req, _ = http.NewRequest("POST", "/api/devices", bytes.NewBuffer(jsonStr))
-	response = performRequest(server, req)
-	assert.Equal(t, http.StatusCreated, response.Code)
-	assert.Equal(t, 1, len(registry.GetDevices(model.StatusUndefined)))
+	response = performRequest(server, registerRequest(`{"identifier": "foo"}`))
+	assert.Equal(t, http.StatusBadRequest, response.Code)
+	assertEqualBody(t, "missing device status", response)
 
-	jsonStr = []byte(`{"identifier": "bar", "properties": { "key": "value" }, "status": "tracked"}`)
-	req, _ = http.NewRequest("POST", "/api/devices", bytes.NewBuffer(jsonStr))
-	response = performRequest(server, req)
+	response = performRequest(server, registerRequest(`{"identifier": "foo", "status": "bad"}`))
+	assert.Equal(t, http.StatusBadRequest, response.Code)
+	assertEqualBody(t, "invalid device status", response)
+
+	response = performRequest(server, registerRequest(`{"identifier": "foo", "status": "tracked"}`))
 	assert.Equal(t, http.StatusCreated, response.Code)
-	devices := registry.GetDevices(model.StatusTracked)
+	assert.Equal(t, 1, len(registry.GetDevices(model.StatusTracked)))
+
+	response = performRequest(server, registerRequest(`{"identifier": "bar", "properties": { "key": "value" }, "status": "ignored"}`))
+	assert.Equal(t, http.StatusCreated, response.Code)
+	devices := registry.GetDevices(model.StatusIgnored)
 	assert.Equal(t, 1, len(devices))
 	assert.Equal(t, "value", devices[0].Properties["key"])
 }
@@ -89,11 +91,11 @@ func TestUnregisterDevice(t *testing.T) {
 
 func TestUpdateDevice(t *testing.T) {
 	devices := make(map[string]*model.Device, 0)
-	devices["foo"] = &model.Device{Identifier: "foo", Description: "old foo"}
+	devices["foo"] = &model.Device{Identifier: "foo", Description: "old foo", Status: model.StatusIgnored}
 	registry := device.NewRegistry(config.Config{Devices: devices})
 	server := NewServer(config.Server{}, registry)
 
-	jsonStr := []byte(`{"identifier": "foo", "description": "new foo"}`)
+	jsonStr := []byte(`{"identifier": "foo", "description": "new foo", "status": "tracked"}`)
 	req, _ := http.NewRequest("PUT", "/api/devices/bar", bytes.NewBuffer(jsonStr))
 	response := performRequest(server, req)
 	assert.Equal(t, http.StatusNotFound, response.Code)
@@ -105,10 +107,22 @@ func TestUpdateDevice(t *testing.T) {
 	d, err := registry.FindDevice("foo")
 	assert.Nil(t, err)
 	assert.Equal(t, "new foo", d.Description)
+	assert.Equal(t, "tracked", d.Status.String())
 }
 
 func performRequest(server *Server, req *http.Request) *httptest.ResponseRecorder {
 	response := httptest.NewRecorder()
 	server.router.ServeHTTP(response, req)
 	return response
+}
+
+func registerRequest(b string) *http.Request {
+	req, _ := http.NewRequest("POST", "/api/devices", bytes.NewBuffer([]byte(b)))
+	return req
+}
+
+func assertEqualBody(t *testing.T, expected string, r *httptest.ResponseRecorder) {
+	bytes, _ := ioutil.ReadAll(r.Body)
+	actual := string(bytes)
+	assert.Equal(t, expected, actual)
 }

@@ -59,7 +59,15 @@ func (r *Registry) AddDevice(d model.Device) error {
 	if _, found := r.devices[d.Identifier]; found {
 		return ErrIDAlreadyTaken
 	}
+	if d.Status == model.StatusUndefined {
+		return model.ErrMissingDeviceStatus
+	}
+
 	d.CreatedAt = time.Now()
+	// reset the presence state
+	d.FirstSeenAt = time.Time{}
+	d.LastSeenAt = time.Time{}
+	d.Present = false
 	r.devices[d.Identifier] = &d
 	r.onAdded(&d)
 	log.Info("Device added: ", d.Identifier)
@@ -256,8 +264,11 @@ func (r *Registry) UpdateDevice(id string, ud model.Device) (model.Device, error
 	if id != ud.Identifier {
 		return model.Device{}, ErrInvalidID
 	}
+	if ud.Status == model.StatusUndefined {
+		return model.Device{}, model.ErrMissingDeviceStatus
+	}
 
-	// identifier, creation date are left untouched
+	// identifier, creation date and presence state are left untouched
 	d.Description = ud.Description
 	d.Interfaces = ud.Interfaces
 	d.Properties = ud.Properties

@@ -23,6 +23,7 @@ func (c *apiContext) registerDevice(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusBadRequest)
+	w.Write([]byte(err.Error()))
 }
 
 func (c *apiContext) unregisterDevice(w http.ResponseWriter, r *http.Request) {
@@ -61,6 +62,7 @@ func (c *apiContext) updateDevice(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 	} else {
 		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
 	}
 }
 

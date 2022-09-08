@@ -207,7 +207,8 @@ components:
     DeviceStatus:
       type: string
       description: DeviceStatus defines the status of a device
-      enum: [undefined, discovered, ignored, tracked]
+      enum: [discovered, ignored, tracked]
+      required: true
   responses:
     deviceArray:
       description: A list of devices

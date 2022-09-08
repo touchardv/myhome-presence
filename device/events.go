@@ -84,6 +84,7 @@ func (r *Registry) onUpdated(d *model.Device, previousStatus model.Status, previ
 	switch previousStatus {
 	case model.StatusDiscovered, model.StatusIgnored:
 		if d.Status == model.StatusTracked {
+			log.Info("Device '", d.Description, "' is now tracked")
 			r.publish(model.EventTypeAdded, model.DeviceAdded{
 				Description: d.Description,
 				Identifier:  d.Identifier,
@@ -94,6 +95,7 @@ func (r *Registry) onUpdated(d *model.Device, previousStatus model.Status, previ
 
 	case model.StatusTracked:
 		if d.Status == model.StatusIgnored {
+			log.Info("Device '", d.Description, "' is now ignored")
 			r.publish(model.EventTypeRemoved, model.DeviceRemoved{
 				Identifier: d.Identifier,
 			})

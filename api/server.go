@@ -46,7 +46,7 @@ func NewServer(cfg config.Server, r *device.Registry) *Server {
 	router.HandleFunc("/api/devices", apiContext.registerDevice).Methods("POST")
 	router.HandleFunc("/api/devices/{id}", apiContext.unregisterDevice).Methods("DELETE")
 	router.HandleFunc("/api/devices/{id}", apiContext.findDevice).Methods("GET")
-	router.HandleFunc("/api/devices/{id}", apiContext.contactDevice).Methods("POST")
+	router.HandleFunc("/api/devices/{id}", apiContext.executeDeviceAction).Methods("POST")
 	router.HandleFunc("/api/devices/{id}", apiContext.updateDevice).Methods("PUT")
 	router.HandleFunc("/api/devices", apiContext.queryDevices).Methods("GET")
 

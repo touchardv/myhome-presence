@@ -36,9 +36,10 @@ func (c *apiContext) unregisterDevice(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (c *apiContext) contactDevice(w http.ResponseWriter, r *http.Request) {
+func (c *apiContext) executeDeviceAction(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	err := c.registry.ContactDevice(vars["id"])
+	q := r.URL.Query()
+	err := c.registry.ExecuteDeviceAction(vars["id"], q.Get("action"))
 	if err == nil {
 		w.WriteHeader(http.StatusAccepted)
 	} else {

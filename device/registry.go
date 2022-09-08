@@ -74,13 +74,34 @@ func (r *Registry) AddDevice(d model.Device) error {
 	return nil
 }
 
-// ContactDevice attempts to contact a device given its identifier.
-func (r *Registry) ContactDevice(id string) error {
+// ExecuteDeviceAction executes an action on a device given its identifier.
+func (r *Registry) ExecuteDeviceAction(id string, action string) error {
 	r.mutex.RLock()
 	defer r.mutex.RUnlock()
 
 	if d, found := r.devices[id]; found {
-		r.watchdog.ping(d)
+		switch action {
+		case "contact":
+			r.watchdog.ping(d)
+
+		case "ignore":
+			previousStatus := d.Status
+			d.Status = model.StatusIgnored
+			previousUpdatedAt := d.UpdatedAt
+			d.UpdatedAt = time.Now()
+			r.onUpdated(d, previousStatus, previousUpdatedAt)
+
+		case "track":
+			previousStatus := d.Status
+			d.Status = model.StatusTracked
+			previousUpdatedAt := d.UpdatedAt
+			d.UpdatedAt = time.Now()
+			r.onUpdated(d, previousStatus, previousUpdatedAt)
+
+		default:
+			return model.ErrInvalidDeviceAction
+		}
+
 		return nil
 	}
 	return ErrNotFound

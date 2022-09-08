@@ -9,7 +9,7 @@ info:
   license:
     name: MIT
     url: http://opensource.org/licenses/MIT
-  version: 0.0.3
+  version: 0.0.4
 servers:
 - url: http://{{ .address }}:{{ .port }}/api
 paths:
@@ -81,8 +81,8 @@ paths:
     post:
       tags:
       - devices
-      summary: Attempt to contact a device given its identifier
-      operationId: contactDevice
+      summary: Execute an action on a device given its identifier.
+      operationId: executeDeviceAction
       parameters:
       - name: id
         in: path
@@ -90,6 +90,14 @@ paths:
         required: true
         schema:
           type: string
+      - description: The action to perform
+        in: query
+        name: action
+        required: true
+        schema:
+          type: string
+          description: The action to perform on the device
+          enum: [contact, ignore, track]
       responses:
         202:
           description: Accepted

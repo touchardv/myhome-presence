@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/touchardv/myhome-presence/config"
 	"github.com/touchardv/myhome-presence/model"
@@ -50,6 +51,10 @@ func (r *Registry) disconnect() {
 }
 
 func (r *Registry) onAdded(d *model.Device) {
+	if d.Status != model.StatusTracked {
+		return
+	}
+
 	r.publish(model.EventTypeAdded, model.DeviceAdded{
 		Description: d.Description,
 		Identifier:  d.Identifier,
@@ -59,6 +64,15 @@ func (r *Registry) onAdded(d *model.Device) {
 }
 
 func (r *Registry) onPresenceUpdated(d *model.Device) {
+	if d.Status != model.StatusTracked {
+		return
+	}
+
+	if d.Present {
+		log.Info("Device '", d.Description, "' is present")
+	} else {
+		log.Info("Device '", d.Description, "' is not present")
+	}
 	r.publish(model.EventTypePresenceUpdated, model.DevicePresenceUpdated{
 		Identifier: d.Identifier,
 		Present:    d.Present,
@@ -66,23 +80,51 @@ func (r *Registry) onPresenceUpdated(d *model.Device) {
 	})
 }
 
-func (r *Registry) onUpdated(d *model.Device) {
-	r.publish(model.EventTypeUpdated, model.DeviceUpdated{
-		Identifier:  d.Identifier,
-		Description: d.Description,
-		Present:     d.Present,
-		LastSeenAt:  d.LastSeenAt,
-	})
+func (r *Registry) onUpdated(d *model.Device, previousStatus model.Status, previousUpdatedAt time.Time) {
+	switch previousStatus {
+	case model.StatusDiscovered, model.StatusIgnored:
+		if d.Status == model.StatusTracked {
+			r.publish(model.EventTypeAdded, model.DeviceAdded{
+				Description: d.Description,
+				Identifier:  d.Identifier,
+				Present:     d.Present,
+				LastSeenAt:  d.LastSeenAt,
+			})
+		}
+
+	case model.StatusTracked:
+		if d.Status == model.StatusIgnored {
+			r.publish(model.EventTypeRemoved, model.DeviceRemoved{
+				Identifier: d.Identifier,
+			})
+		} else if d.Status == model.StatusTracked {
+			// limit the number of update events
+			elapsed := time.Since(previousUpdatedAt)
+			if elapsed.Minutes() > 1 {
+				r.publish(model.EventTypeUpdated, model.DeviceUpdated{
+					Identifier:  d.Identifier,
+					Description: d.Description,
+					Present:     d.Present,
+					LastSeenAt:  d.LastSeenAt,
+				})
+			}
+		}
+	}
 }
 
-func (r *Registry) onRemoved(id string) {
+func (r *Registry) onRemoved(d *model.Device) {
+	if d.Status != model.StatusTracked {
+		return
+	}
+
 	r.publish(model.EventTypeRemoved, model.DeviceRemoved{
-		Identifier: id,
+		Identifier: d.Identifier,
 	})
 }
 
 func (r *Registry) publish(t model.EventType, itf interface{}) {
 	if r.mqttClient == nil {
+		log.Debugf("Event: %s - %s", t.String(), itf)
 		return
 	}
 	data, err := json.Marshal(itf)

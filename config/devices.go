@@ -24,11 +24,14 @@ func load(location string, name string) ([]model.Device, error) {
 		err = yaml.Unmarshal(content, &devices)
 	}
 
-	// "data migration" for setting a created_at value
+	// "data migration" for setting a created_at/updated_at values
 	now := time.Now()
 	for i := range devices {
 		if devices[i].CreatedAt.IsZero() {
 			devices[i].CreatedAt = now
+		}
+		if devices[i].UpdatedAt.IsZero() {
+			devices[i].UpdatedAt = now
 		}
 	}
 	return devices, err

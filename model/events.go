@@ -55,6 +55,10 @@ func (e *EventType) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+func (e *EventType) String() string {
+	return eventTypeToString[*e]
+}
+
 type Event struct {
 	Type EventType       `json:"type"`
 	Data json.RawMessage `json:"data"`

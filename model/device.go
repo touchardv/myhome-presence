@@ -103,4 +103,5 @@ type Device struct {
 	Present     bool              `json:"present" yaml:"present"`
 	Properties  map[string]string `json:"properties,omitempty" yaml:"properties,omitempty"`
 	Status      Status            `json:"status" yaml:"status"`
+	UpdatedAt   time.Time         `json:"updated_at" yaml:"updated_at"`
 }

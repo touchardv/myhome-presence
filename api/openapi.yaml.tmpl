@@ -183,6 +183,10 @@ components:
         status:
           type: object
           $ref: '#/components/schemas/DeviceStatus'
+        updated_at:
+          description: The device last update date and time.
+          type: string
+          format: date-time
     Interface:
       required:
       - Type

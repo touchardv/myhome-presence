@@ -1,6 +1,7 @@
 package device
 
 import (
+	"context"
 	"strings"
 	"testing"
 	"time"
@@ -179,7 +180,9 @@ func TestRemoveDevice(t *testing.T) {
 
 func TestRegistryStartStop(t *testing.T) {
 	registry := NewRegistry(cfg)
-	registry.Start()
+	ctx, cancel := context.WithCancel(context.Background())
+	registry.Start(ctx)
+	cancel()
 	registry.Stop()
 }
 

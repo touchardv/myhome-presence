@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/signal"
@@ -43,7 +44,9 @@ func main() {
 	tplink.EnableTrackers()
 	registry := device.NewRegistry(config)
 	server := api.NewServer(config.Server, registry)
-	registry.Start()
+
+	ctx, stopFunc := context.WithCancel(context.Background())
+	registry.Start(ctx)
 	server.Start()
 
 	c := make(chan os.Signal, 1)
@@ -51,6 +54,7 @@ func main() {
 	<-c
 
 	server.Stop()
+	stopFunc()
 	registry.Stop()
 	config.Save(registry.GetDevices(model.StatusUndefined))
 	log.Info("...Stopped")

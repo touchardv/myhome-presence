@@ -1,6 +1,7 @@
 package device
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -29,13 +30,31 @@ func mqttClientID() string {
 	return fmt.Sprintf("%s-%d", hostname, os.Getpid())
 }
 
-func (r *Registry) connect() {
+func (r *Registry) connect(ctx context.Context) {
 	if r.mqttClient == nil {
 		return
 	}
-	log.Debug("Connecting to MQTT")
-	if token := r.mqttClient.Connect(); token.Wait() && token.Error() != nil {
-		log.Error(token.Error())
+	log.Info("Connecting to MQTT")
+	retry := time.NewTicker(5 * time.Second)
+
+connectLoop:
+	for {
+		if token := r.mqttClient.Connect(); token.Wait() && token.Error() != nil {
+			log.Error("Failed to connect to MQTT: ", token.Error())
+		} else {
+			retry.Stop()
+			log.Info("Connected to MQTT")
+			break connectLoop
+		}
+
+		select {
+		case <-retry.C:
+			continue
+
+		case <-ctx.Done():
+			retry.Stop()
+			break connectLoop
+		}
 	}
 }
 
@@ -44,9 +63,9 @@ func (r *Registry) disconnect() {
 		return
 	}
 	if r.mqttClient.IsConnected() {
-		log.Debug("Disconnecting from MQTT")
+		log.Info("Disconnecting from MQTT")
 		r.mqttClient.Disconnect(500)
-		log.Debug("Disconnected from MQTT")
+		log.Info("Disconnected from MQTT")
 	}
 }
 

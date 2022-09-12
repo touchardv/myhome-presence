@@ -1,6 +1,7 @@
 package device
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -11,8 +12,10 @@ import (
 func TestStartStop(t *testing.T) {
 	registry := NewRegistry(cfg)
 	watchdog := newWatchDog(cfg)
-	go watchdog.loop(registry)
+	ctx, cancel := context.WithCancel(context.Background())
+	go watchdog.loop(registry, ctx)
 
+	cancel()
 	watchdog.stop()
 }
 

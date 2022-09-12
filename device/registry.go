@@ -1,6 +1,7 @@
 package device
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -252,10 +253,10 @@ func sanitized(in model.Interface) model.Interface {
 }
 
 // Start activates the tracking of devices.
-func (r *Registry) Start() {
+func (r *Registry) Start(ctx context.Context) {
 	log.Info("Starting: registry")
-	r.connect()
-	go r.watchdog.loop(r)
+	go r.connect(ctx)
+	go r.watchdog.loop(r, ctx)
 }
 
 // Stop de-activates the tracking of devices.

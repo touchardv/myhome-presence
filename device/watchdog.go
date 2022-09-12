@@ -12,7 +12,7 @@ import (
 
 type watchdog struct {
 	stopped  chan bool
-	stopping chan bool
+	stopping chan interface{}
 	trackers []Tracker
 }
 
@@ -23,16 +23,15 @@ func newWatchDog(cfg config.Config) *watchdog {
 	}
 	return &watchdog{
 		stopped:  make(chan bool),
-		stopping: make(chan bool),
+		stopping: make(chan interface{}),
 		trackers: trackers,
 	}
 }
 
-func (w *watchdog) loop(r *Registry) {
+func (w *watchdog) loop(r *Registry, ctx context.Context) {
 	log.Info("Starting: device watchdog")
 	var trackersWg sync.WaitGroup
 
-	ctx, trackersStopFunc := context.WithCancel(context.Background())
 	trackersWg.Add(len(w.trackers))
 	for _, t := range w.trackers {
 		go t.Loop(r.reportPresence, ctx, &trackersWg)
@@ -44,7 +43,6 @@ func (w *watchdog) loop(r *Registry) {
 		select {
 		case <-w.stopping:
 			log.Info("Stopping: trackers...")
-			trackersStopFunc()
 			trackersWg.Wait()
 			log.Info("Stopped: trackers")
 			w.stopped <- true
@@ -65,7 +63,7 @@ func (w *watchdog) loop(r *Registry) {
 
 func (w *watchdog) stop() {
 	log.Info("Stopping: device watchdog...")
-	w.stopping <- true
+	close(w.stopping)
 	<-w.stopped
 	log.Info("Stopped: device watchdog")
 }

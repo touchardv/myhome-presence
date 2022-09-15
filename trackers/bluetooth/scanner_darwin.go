@@ -91,7 +91,7 @@ func (mgr *btDarwinManager) DidDiscoverPeripheral(cmgr cbgo.CentralManager, p cb
 		props[fmt.Sprintf("ServiceData-%s", data.UUID.String())] = string(data.Data)
 	}
 	itf := model.Interface{
-		Type:       model.InterfaceBluetoothLowEnergy,
+		Type:       model.InterfaceBluetooth,
 		MACAddress: p.Identifier().String(), // on OSX this is not a MACAddress but a UUID
 	}
 	mgr.report(itf, props)

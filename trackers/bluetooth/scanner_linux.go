@@ -77,7 +77,7 @@ func (mgr *btLinuxManager) scan(report device.ReportPresenceFunc, ctx context.Co
 				props[fmt.Sprintf("ServiceData-%s", uuid)] = fmt.Sprint(d)
 			}
 			report(model.Interface{
-				Type:       model.InterfaceBluetoothLowEnergy,
+				Type:       model.InterfaceBluetooth,
 				MACAddress: dev.Properties.Address,
 			}, props)
 		}

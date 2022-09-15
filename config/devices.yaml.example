@@ -1,7 +1,7 @@
 - description: My smartwatch
   identifier: my-smartwatch
   interfaces:
-    - type: ble
+    - type: bluetooth
       macaddress: 9d329f8ba3c24ae0a494b195dda27d41
   status: ignored
   present: true

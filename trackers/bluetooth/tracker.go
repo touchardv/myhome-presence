@@ -23,7 +23,7 @@ func newBTTracker(config.Settings) device.Tracker {
 func (t *btTracker) Loop(deviceReport device.ReportPresenceFunc, ctx context.Context, wg *sync.WaitGroup) error {
 	defer wg.Done()
 
-	log.Info("Starting: Bluetooth tracker")
+	log.Info("Starting: bluetooth tracker")
 	mgr := newBtManager()
 	err := mgr.scan(deviceReport, ctx)
 	if err != nil {
@@ -33,7 +33,7 @@ func (t *btTracker) Loop(deviceReport device.ReportPresenceFunc, ctx context.Con
 		mgr.stopScan()
 	}
 
-	log.Info("Stopped: Bluetooth tracker")
+	log.Info("Stopped: bluetooth tracker")
 	return nil
 }
 

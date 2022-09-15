@@ -15,7 +15,7 @@ var device = model.Device{
 	Description: "dummy",
 	Identifier:  "foo",
 	Interfaces: []model.Interface{
-		{Type: model.InterfaceBluetoothLowEnergy, MACAddress: "bb:77:33:00:00:00"},
+		{Type: model.InterfaceBluetooth, MACAddress: "bb:77:33:00:00:00"},
 		{Type: model.InterfaceBluetooth, MACAddress: "bb:11:00:00:00:00"},
 		{Type: model.InterfaceWifi, IPv4Address: "1.2.3.4"},
 	},
@@ -95,7 +95,7 @@ func TestReportPresenceOfAExistingDevice(t *testing.T) {
 	assert.False(t, devices[0].LastSeenAt.IsZero())
 
 	// matching the interface type (via uppercased MAC address)
-	registry.reportPresence(model.Interface{Type: model.InterfaceBluetoothLowEnergy, MACAddress: "BB:77:33:00:00:00"}, nil)
+	registry.reportPresence(model.Interface{Type: model.InterfaceBluetooth, MACAddress: "BB:77:33:00:00:00"}, nil)
 	devices = registry.GetDevices(model.StatusUndefined)
 	assert.Equal(t, 1, len(devices))
 
@@ -113,7 +113,7 @@ func TestReportPresenceOfAExistingDevice(t *testing.T) {
 func TestReportPresenceOfANewDevice(t *testing.T) {
 	registry := NewRegistry(config.Config{Devices: map[string]*model.Device{}})
 
-	registry.reportPresence(model.Interface{Type: model.InterfaceBluetoothLowEnergy, MACAddress: "12:34:56:78:9A"}, nil)
+	registry.reportPresence(model.Interface{Type: model.InterfaceBluetooth, MACAddress: "12:34:56:78:9A"}, nil)
 
 	devices := registry.GetDevices(model.StatusUndefined)
 	assert.Equal(t, 1, len(devices))
@@ -122,14 +122,14 @@ func TestReportPresenceOfANewDevice(t *testing.T) {
 	assert.NotZero(t, devices[0].CreatedAt)
 	assert.NotZero(t, devices[0].FirstSeenAt)
 	assert.NotZero(t, devices[0].LastSeenAt)
-	assert.Equal(t, model.InterfaceBluetoothLowEnergy, devices[0].Interfaces[0].Type)
+	assert.Equal(t, model.InterfaceBluetooth, devices[0].Interfaces[0].Type)
 	assert.Equal(t, "12:34:56:78:9a", devices[0].Interfaces[0].MACAddress)
 	assert.Equal(t, model.StatusDiscovered, devices[0].Status)
 }
 
 func TestNewDevice(t *testing.T) {
 	registry := NewRegistry(cfg)
-	d := registry.newDevice(model.Interface{Type: model.InterfaceBluetoothLowEnergy, MACAddress: "one"}, nil)
+	d := registry.newDevice(model.Interface{Type: model.InterfaceBluetooth, MACAddress: "one"}, nil)
 
 	assert.NotEmpty(t, d.Identifier)
 	assert.NotEmpty(t, d.Description)
@@ -137,14 +137,14 @@ func TestNewDevice(t *testing.T) {
 	assert.True(t, d.Present)
 	assert.Equal(t, 1, len(d.Interfaces))
 	assert.Equal(t, "one", d.Interfaces[0].MACAddress)
-	assert.Equal(t, model.InterfaceBluetoothLowEnergy, d.Interfaces[0].Type)
+	assert.Equal(t, model.InterfaceBluetooth, d.Interfaces[0].Type)
 
-	d = registry.newDevice(model.Interface{Type: model.InterfaceBluetoothLowEnergy, MACAddress: "two"}, map[string]string{
+	d = registry.newDevice(model.Interface{Type: model.InterfaceBluetooth, MACAddress: "two"}, map[string]string{
 		ReportDataSuggestedIdentifier: "baz",
 	})
 	assert.Equal(t, "baz", d.Identifier) // no ID conflict
 
-	d = registry.newDevice(model.Interface{Type: model.InterfaceBluetoothLowEnergy, MACAddress: "three"}, map[string]string{
+	d = registry.newDevice(model.Interface{Type: model.InterfaceBluetooth, MACAddress: "three"}, map[string]string{
 		ReportDataSuggestedIdentifier: "foo",
 	})
 	assert.NotEqual(t, "foo", d.Identifier)
@@ -154,7 +154,7 @@ func TestNewDevice(t *testing.T) {
 func TestLookupDevice(t *testing.T) {
 	registry := NewRegistry(cfg)
 
-	d := registry.lookupDevice(model.Interface{Type: model.InterfaceBluetoothLowEnergy, MACAddress: "bb:77:33:00:00:00"})
+	d := registry.lookupDevice(model.Interface{Type: model.InterfaceBluetooth, MACAddress: "bb:77:33:00:00:00"})
 	assert.NotNil(t, d)
 	assert.Equal(t, "foo", d.Identifier)
 
@@ -166,7 +166,7 @@ func TestLookupDevice(t *testing.T) {
 	assert.NotNil(t, d)
 	assert.Equal(t, "foo", d.Identifier)
 
-	d = registry.lookupDevice(model.Interface{Type: model.InterfaceBluetoothLowEnergy, MACAddress: "foobar"})
+	d = registry.lookupDevice(model.Interface{Type: model.InterfaceBluetooth, MACAddress: "foobar"})
 	assert.Nil(t, d)
 }
 

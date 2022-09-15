@@ -27,17 +27,13 @@ const (
 
 	// InterfaceBluetooth corresponds to a Bluetooth interface
 	InterfaceBluetooth
-
-	// InterfaceBluetoothLowEnergy corresponds to a Bluetooth Low Energy interface
-	InterfaceBluetoothLowEnergy
 )
 
 var interfaceTypeToString = map[InterfaceType]string{
-	InterfaceUnknown:            "unknown",
-	InterfaceEthernet:           "ethernet",
-	InterfaceWifi:               "wifi",
-	InterfaceBluetooth:          "bluetooth",
-	InterfaceBluetoothLowEnergy: "ble",
+	InterfaceUnknown:   "unknown",
+	InterfaceEthernet:  "ethernet",
+	InterfaceWifi:      "wifi",
+	InterfaceBluetooth: "bluetooth",
 }
 
 var stringToInterfaceType = map[string]InterfaceType{
@@ -45,7 +41,6 @@ var stringToInterfaceType = map[string]InterfaceType{
 	"ethernet":  InterfaceEthernet,
 	"wifi":      InterfaceWifi,
 	"bluetooth": InterfaceBluetooth,
-	"ble":       InterfaceBluetoothLowEnergy,
 }
 
 func (i InterfaceType) String() string {

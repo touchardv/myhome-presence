@@ -26,7 +26,7 @@ func TestLoadingDevicesState(t *testing.T) {
 	device := cfg.Devices["my-smartwatch"]
 	assert.False(t, device.LastSeenAt.IsZero())
 	assert.Equal(t, 1, len(device.Interfaces))
-	assert.Equal(t, model.InterfaceBluetoothLowEnergy, device.Interfaces[0].Type)
+	assert.Equal(t, model.InterfaceBluetooth, device.Interfaces[0].Type)
 	assert.True(t, device.Present)
 	assert.Equal(t, model.StatusIgnored, device.Status)
 

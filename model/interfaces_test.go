@@ -29,9 +29,9 @@ func TestJSONDeSerialization(t *testing.T) {
 }
 
 func TestYAMLSerialization(t *testing.T) {
-	i := InterfaceBluetoothLowEnergy
+	i := InterfaceBluetooth
 	data, _ := yaml.Marshal(i)
-	assert.Equal(t, "ble\n", string(data))
+	assert.Equal(t, "bluetooth\n", string(data))
 }
 
 func TestYAMLDeserialization(t *testing.T) {

@@ -65,10 +65,11 @@ type Event struct {
 }
 
 type DeviceAdded struct {
-	Description string    `json:"description"`
-	Identifier  string    `json:"identifier"`
-	Present     bool      `json:"present"`
-	LastSeenAt  time.Time `json:"last_seen_at"`
+	Description string            `json:"description"`
+	Identifier  string            `json:"identifier"`
+	Present     bool              `json:"present"`
+	Properties  map[string]string `json:"properties"`
+	LastSeenAt  time.Time         `json:"last_seen_at"`
 }
 
 type DevicePresenceUpdated struct {
@@ -78,10 +79,11 @@ type DevicePresenceUpdated struct {
 }
 
 type DeviceUpdated struct {
-	Description string    `json:"description"`
-	Identifier  string    `json:"identifier"`
-	Present     bool      `json:"present"`
-	LastSeenAt  time.Time `json:"last_seen_at"`
+	Description string            `json:"description"`
+	Identifier  string            `json:"identifier"`
+	Present     bool              `json:"present"`
+	Properties  map[string]string `json:"properties"`
+	LastSeenAt  time.Time         `json:"last_seen_at"`
 }
 
 type DeviceRemoved struct {

@@ -78,6 +78,7 @@ func (r *Registry) onAdded(d *model.Device) {
 		Description: d.Description,
 		Identifier:  d.Identifier,
 		Present:     d.Present,
+		Properties:  d.Properties,
 		LastSeenAt:  d.LastSeenAt,
 	})
 }
@@ -108,6 +109,7 @@ func (r *Registry) onUpdated(d *model.Device, previousStatus model.Status, previ
 				Description: d.Description,
 				Identifier:  d.Identifier,
 				Present:     d.Present,
+				Properties:  d.Properties,
 				LastSeenAt:  d.LastSeenAt,
 			})
 		}
@@ -126,6 +128,7 @@ func (r *Registry) onUpdated(d *model.Device, previousStatus model.Status, previ
 					Identifier:  d.Identifier,
 					Description: d.Description,
 					Present:     d.Present,
+					Properties:  d.Properties,
 					LastSeenAt:  d.LastSeenAt,
 				})
 			}

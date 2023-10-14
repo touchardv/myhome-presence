@@ -1,20 +1,13 @@
 # myhome-presence
 
-A web service for querying, managing and tracking family members presence at home.
-
-Please note this is a work-in-progress; I use this project to:
-
-* Continue learning the Go language.
-* Experiment with presence detection at home (using IP ping, Bluetooth...).
-* Complete my "home" automation/security/... software.
-* Have fun.
+A web service for querying, managing and tracking home devices presence at home.
 
 ## Building
 
 Requirements:
 
 * The `make` command (e.g. [GNU make](https://www.gnu.org/software/make/manual/make.html)).
-* The [Golang toolchain](https://golang.org/doc/install) (version 1.18 or later).
+* The [Golang toolchain](https://golang.org/doc/install) (version 1.20 or later).
 
 In a shell, execute: `make` (or `make build`).
 

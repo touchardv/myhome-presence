@@ -19,7 +19,7 @@ $(BUILD_DIR)/$(BINARY): $(BUILD_DIR) $(SOURCES) api/openapi.yaml.tmpl
 	go build $(LD_ARGS) -o $(BUILD_DIR)/$(BINARY) .
 
 $(BUILD_DIR)/$(BINARY)-linux-arm: $(SOURCES) api/openapi.yaml.tmpl
-	$(shell export GO111MODULE=on; export GOOS=linux; export GOARCH=arm; export GOARM=5; go build  $(LD_ARGS) -o $(BUILD_DIR)/$(BINARY)-linux-arm .)
+	$(shell export GO111MODULE=on; export GOOS=linux; export GOARCH=arm64; go build  $(LD_ARGS) -o $(BUILD_DIR)/$(BINARY)-linux-arm .)
 
 .PHONY: clean
 clean:

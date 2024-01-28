@@ -15,8 +15,8 @@ build-linux: $(BUILD_DIR)/$(BINARY)-linux-arm
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
-$(BUILD_DIR)/$(BINARY): $(BUILD_DIR) $(SOURCES) api/openapi.yaml.tmpl
-	go build $(LD_ARGS) -o $(BUILD_DIR)/$(BINARY) .
+$(BUILD_DIR)/$(BINARY): $(BUILD_DIR) $(SOURCES) internal/api/openapi.yaml.tmpl
+	go build $(LD_ARGS) -o $(BUILD_DIR)/$(BINARY) ./cmd/myhome-presence
 
 $(BUILD_DIR)/$(BINARY)-linux-arm: $(SOURCES) api/openapi.yaml.tmpl
 	$(shell export GO111MODULE=on; export GOOS=linux; export GOARCH=arm64; go build  $(LD_ARGS) -o $(BUILD_DIR)/$(BINARY)-linux-arm .)
@@ -40,7 +40,7 @@ run: $(BUILD_DIR)/$(BINARY)
 setup:
 	ssh $(TARGET) sudo mkdir -p /etc/myhome /var/log/myhome
 	ssh $(TARGET) sudo chown -R pi:pi /etc/myhome /var/log/myhome
-	scp myhome-presence.*  $(TARGET):/tmp
+	scp deployment/myhome-presence.*  $(TARGET):/tmp
 	ssh $(TARGET) sudo mv /tmp/myhome-presence.conf /etc/sysctl.d/myhome-presence.conf
 	ssh $(TARGET) sudo mv /tmp/myhome-presence.service /etc/systemd/system/myhome-presence.service
 	ssh $(TARGET) sudo systemctl enable myhome-presence

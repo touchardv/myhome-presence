@@ -9,8 +9,8 @@ import (
 	"github.com/muka/go-bluetooth/bluez/profile/adapter"
 	linux_device "github.com/muka/go-bluetooth/bluez/profile/device"
 	log "github.com/sirupsen/logrus"
-	"github.com/touchardv/myhome-presence/device"
-	"github.com/touchardv/myhome-presence/model"
+	"github.com/touchardv/myhome-presence/internal/device"
+	"github.com/touchardv/myhome-presence/pkg/model"
 )
 
 type btLinuxManager struct {

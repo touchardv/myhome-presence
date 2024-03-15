@@ -1,7 +1,6 @@
 package config
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -13,14 +12,16 @@ import (
 
 func TestRetrieving(t *testing.T) {
 	cwd, _ := os.Getwd()
-	cfg := retrieve(cwd, "config.yaml.example")
+	cfg := Config{cfgLocation: cwd, dataLocation: cwd}
+	cfg.loadConfig(cwd, "config.yaml.example")
 	assert.Equal(t, 0, len(cfg.Devices))
 }
 
 func TestLoadingDevicesState(t *testing.T) {
 	cwd, _ := os.Getwd()
-	cfg := retrieve(cwd, "config.yaml.example")
-	cfg.load(cwd, "devices.yaml.example")
+	cfg := Config{cfgLocation: cwd, dataLocation: cwd}
+	cfg.loadConfig(cwd, "config.yaml.example")
+	cfg.loadDevicesData(cwd, "devices.yaml.example")
 	assert.Equal(t, 2, len(cfg.Devices))
 
 	device := cfg.Devices["my-smartwatch"]
@@ -42,7 +43,7 @@ func TestLoadingDevicesState(t *testing.T) {
 }
 
 func TestSavingDevicesState(t *testing.T) {
-	tempDir, err := ioutil.TempDir("", "config_test")
+	tempDir, err := os.MkdirTemp("", "config_test")
 	if err != nil {
 		log.Fatal(err)
 	}

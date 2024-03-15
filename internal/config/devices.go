@@ -1,7 +1,6 @@
 package config
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
@@ -17,8 +16,8 @@ func load(location string, name string) ([]model.Device, error) {
 	if os.IsNotExist(err) {
 		return []model.Device{}, nil
 	}
-	log.Debug("Loading devices from: ", filename)
-	content, err := ioutil.ReadFile(filename)
+	log.Debug("Loading data from: ", filename)
+	content, err := os.ReadFile(filename)
 	devices := make([]model.Device, 10)
 	if err == nil {
 		err = yaml.Unmarshal(content, &devices)
@@ -49,7 +48,7 @@ func save(devices []model.Device, location string, name string) error {
 	if err == nil {
 		filename := filepath.Join(location, name)
 		log.Debug("Saving devices to: ", filename)
-		err = ioutil.WriteFile(filename, bytes, 0644)
+		err = os.WriteFile(filename, bytes, 0644)
 	}
 	return err
 }

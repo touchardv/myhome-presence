@@ -31,14 +31,15 @@ func main() {
 
 	daemonized := pflag.Bool("daemon", false, "Start as daemon")
 	logLevel := pflag.String("log-level", log.InfoLevel.String(), "The logging level (trace, debug, info...)")
-	configLocation := pflag.String("config-location", config.DefaultLocation, "The path to the directory where the configuration file is stored.")
+	configLocation := pflag.String("config-location", config.DefaultCfgLocation, "The path to the directory where the configuration file is stored.")
+	dataLocation := pflag.String("data-location", config.DefaultDataLocation, "The path to the directory where the data file is stored.")
 	pflag.Parse()
 
 	close := config.SetupLogging(*logLevel, *daemonized)
 	defer close()
 
 	log.Info("Starting...")
-	config := config.Retrieve(*configLocation)
+	config := config.Retrieve(*configLocation, *dataLocation)
 	bluetooth.EnableTracker()
 	ipv4.EnableTracker()
 	tplink.EnableTrackers()

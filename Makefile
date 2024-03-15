@@ -35,7 +35,7 @@ deploy: test copy
 	ssh $(TARGET) sudo systemctl start myhome-presence
 
 run: $(BUILD_DIR)/$(BINARY)
-	$(BUILD_DIR)/$(BINARY) --config-location=`pwd` --log-level=debug
+	$(BUILD_DIR)/$(BINARY) --config-location=`pwd` --data-location=`pwd` --log-level=debug
 
 setup:
 	ssh $(TARGET) sudo mkdir -p /etc/myhome /var/log/myhome

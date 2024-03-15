@@ -1,7 +1,7 @@
 package config
 
 import (
-	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	"gopkg.in/yaml.v2"
@@ -29,31 +29,41 @@ type Settings map[string]string
 
 // Config contains the list of all devices to be tracked.
 type Config struct {
-	Devices    map[string]*model.Device `yaml:"-"`
-	MQTTServer MQTT                     `yaml:"mqtt_server"`
-	Server     Server                   `yaml:"server"`
-	Trackers   map[string]Settings      `yaml:"trackers"`
-	location   string                   `yaml:"-"`
+	Devices      map[string]*model.Device `yaml:"-"`
+	MQTTServer   MQTT                     `yaml:"mqtt_server"`
+	Server       Server                   `yaml:"server"`
+	Trackers     map[string]Settings      `yaml:"trackers"`
+	cfgLocation  string                   `yaml:"-"`
+	dataLocation string                   `yaml:"-"`
 }
 
-// DefaultLocation corresponds to the default path to the directory where
+// DefaultCfgLocation corresponds to the default path to the directory where
 // the configuration file is stored.
-const DefaultLocation = "/etc/myhome"
+const DefaultCfgLocation = "/etc/myhome"
 
-const defaultFilename = "config.yaml"
+const cfgFilename = "config.yaml"
+
+// DefaultDataLocation corresponds to the default path to the directory where
+// the data is stored.
+const DefaultDataLocation = "/var/lib/myhome"
+
 const devicesFilename = "devices.yaml"
 
 // Retrieve reads and parses the configuration file.
-func Retrieve(location string) Config {
-	cfg := retrieve(location, defaultFilename)
-	cfg.load(location, devicesFilename)
+func Retrieve(cfgLocation string, dataLocation string) Config {
+	cfg := Config{
+		cfgLocation:  cfgLocation,
+		dataLocation: dataLocation,
+	}
+	cfg.loadConfig(cfgLocation, cfgFilename)
+	cfg.loadDevicesData(dataLocation, devicesFilename)
 	return cfg
 }
 
-func retrieve(location string, name string) Config {
-	cfg := Config{location: location}
+func (cfg *Config) loadConfig(location string, name string) {
 	filename := filepath.Join(location, name)
-	content, err := ioutil.ReadFile(filename)
+	log.Debug("Loading config from: ", filename)
+	content, err := os.ReadFile(filename)
 	if err == nil {
 		err = yaml.Unmarshal(content, &cfg)
 	}
@@ -61,10 +71,9 @@ func retrieve(location string, name string) Config {
 		log.Fatal(err)
 	}
 	cfg.Devices = make(map[string]*model.Device)
-	return cfg
 }
 
-func (cfg *Config) load(location string, name string) {
+func (cfg *Config) loadDevicesData(location string, name string) {
 	devices, err := load(location, name)
 	if err != nil {
 		log.Fatal(err)
@@ -79,5 +88,5 @@ func (cfg *Config) load(location string, name string) {
 
 // Save persists the device list to disk.
 func (cfg *Config) Save(devices []model.Device) {
-	save(devices, cfg.location, devicesFilename)
+	save(devices, cfg.dataLocation, devicesFilename)
 }

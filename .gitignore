@@ -1,6 +1,6 @@
 .vscode
 build
-config.yaml
+/config.yaml
 swagger.json
 devices.yaml
 openapi.go

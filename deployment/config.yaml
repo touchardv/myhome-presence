@@ -1,0 +1,9 @@
+mqtt_server:
+  enabled: false
+server:
+  address: 0.0.0.0
+  port: 8080
+  swagger_ui_url: https://validator.swagger.io
+
+trackers:
+  ipv4: {}

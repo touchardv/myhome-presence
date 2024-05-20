@@ -12,7 +12,7 @@ import (
 //go:embed  openapi.yaml.tmpl
 var openapiYAML []byte
 
-func getSwaggerDocument(w http.ResponseWriter, r *http.Request, cfg config.Server) {
+func getSwaggerDocument(w http.ResponseWriter, _ *http.Request, cfg config.Server) {
 	t, err := template.New("openapi").Parse(string(openapiYAML))
 	if err != nil {
 		log.Fatal("Error parsing template: ", err)

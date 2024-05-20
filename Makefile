@@ -23,9 +23,9 @@ endif
 
 .DEFAULT_GOAL := build
 .PHONY: build
-build: $(BUILD_DIR)/myhome-presence-$(GOOS)-$(GOARCH)
+build: $(BUILD_DIR)/$(BINARY)
 
-build-image: $(BUILD_DIR)/myhome-presence-linux-$(GOARCH)
+build-image: $(BUILD_DIR)/$(BINARY)
 	docker buildx build --progress plain \
 	--build-arg ALPINE_VERSION=$(ALPINE_VERSION) \
 	--platform $(DOCKER_BUILDX_PLATFORM) \
@@ -41,6 +41,7 @@ $(BUILD_DIR)/$(BINARY): $(BUILD_DIR) $(SOURCES) internal/api/openapi.yaml.tmpl
 clean:
 	rm -rf $(BUILD_DIR)
 	docker image rm -f $(IMAGE)/$(TAG)
+	go clean
 
 deploy-systemd-service: $(BUILD_DIR)/$(BINARY) test
 	scp $(BUILD_DIR)/$(BINARY) $(TARGET):/tmp/$(BINARY)

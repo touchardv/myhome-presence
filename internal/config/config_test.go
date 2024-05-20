@@ -49,7 +49,7 @@ func TestSavingDevicesState(t *testing.T) {
 	}
 	defer os.RemoveAll(tempDir)
 
-	devices := []model.Device{model.Device{Identifier: "foobar", Present: true}}
+	devices := []model.Device{{Identifier: "foobar", Present: true}}
 	err = save(devices, tempDir, "test-devices.yaml")
 	assert.Nil(t, err)
 	assert.FileExists(t, filepath.Join(tempDir, "test-devices.yaml"))

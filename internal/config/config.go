@@ -84,6 +84,7 @@ func (cfg *Config) loadDevicesData(location string, name string) {
 		}
 		*cfg.Devices[d.Identifier] = d
 	}
+	log.Infof("Loaded %d devices", len(cfg.Devices))
 }
 
 // Save persists the device list to disk.

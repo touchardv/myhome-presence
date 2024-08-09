@@ -14,6 +14,7 @@ import (
 	"github.com/touchardv/myhome-presence/internal/device"
 	"github.com/touchardv/myhome-presence/internal/trackers/bluetooth"
 	"github.com/touchardv/myhome-presence/internal/trackers/ipv4"
+	"github.com/touchardv/myhome-presence/internal/trackers/linksys"
 	"github.com/touchardv/myhome-presence/internal/trackers/tplink"
 	"github.com/touchardv/myhome-presence/pkg/model"
 )
@@ -42,6 +43,7 @@ func main() {
 	config := config.Retrieve(*configLocation, *dataLocation)
 	bluetooth.EnableTracker()
 	ipv4.EnableTracker()
+	linksys.EnableTracker()
 	tplink.EnableTrackers()
 	registry := device.NewRegistry(config)
 	server := api.NewServer(config.Server, registry)

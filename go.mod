@@ -1,6 +1,6 @@
 module github.com/touchardv/myhome-presence
 
-go 1.22
+go 1.23
 
 replace github.com/JuulLabs-OSS/cbgo => github.com/gkuchta/cbgo v0.0.3-0.20210309070341-a5fcee8c38af
 

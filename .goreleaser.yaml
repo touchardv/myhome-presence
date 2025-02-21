@@ -11,11 +11,7 @@ builds:
       - amd64
       - arm64
     goos:
-      - darwin
       - linux
-    ignore:
-      - goarch: amd64
-        goos: darwin
     main: ./cmd/myhome-presence
 
 dockers:

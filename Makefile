@@ -7,7 +7,6 @@ GOOS := $(shell go env GOOS)
 SOURCES := $(shell find . -name '*.go')
 TARGET ?= $(shell uname -m)
 
-ALPINE_VERSION := 3.19
 BINARY := myhome-presence-$(GOOS)-$(GOARCH)
 IMAGE := quay.io/touchardv/myhome-presence
 LD_ARGS := -ldflags "-X main.buildDate=$(BUILD_DATE) -X main.gitCommitHash=$(GIT_COMMIT_HASH) -X main.gitVersionTag=$(GIT_VERSION_TAG)"
@@ -27,7 +26,6 @@ build: $(BUILD_DIR)/$(BINARY)
 
 build-image: $(BUILD_DIR)/$(BINARY)
 	docker buildx build --progress plain \
-	--build-arg ALPINE_VERSION=$(ALPINE_VERSION) \
 	--platform $(DOCKER_BUILDX_PLATFORM) \
 	--tag $(IMAGE):$(TAG) --load -f deployment/Dockerfile .
 

@@ -1,5 +1,6 @@
 .vscode
 build
+dist
 /config.yaml
 swagger.json
 devices.yaml

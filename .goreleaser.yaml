@@ -46,5 +46,5 @@ dockers:
 docker_manifests:
   - image_templates:
       - "quay.io/touchardv/myhome-presence:v{{ .Version }}-amd64"
-      - "quay.io/touchardv/myhome-presence:v{{ .Version }}-amd64"
+      - "quay.io/touchardv/myhome-presence:v{{ .Version }}-arm64"
     name_template: "quay.io/touchardv/myhome-presence:v{{ .Version }}"

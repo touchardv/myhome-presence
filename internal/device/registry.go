@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"maps"
+
 	MQTT "github.com/eclipse/paho.mqtt.golang"
 	log "github.com/sirupsen/logrus"
 	"github.com/touchardv/myhome-presence/internal/config"
@@ -222,9 +224,7 @@ func (r *Registry) reportPresence(itf model.Interface, optData map[string]string
 			if d.Properties == nil {
 				d.Properties = optData
 			} else {
-				for k, v := range optData {
-					d.Properties[k] = v
-				}
+				maps.Copy(d.Properties, optData)
 			}
 		}
 

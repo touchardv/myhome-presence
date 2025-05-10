@@ -33,6 +33,7 @@ $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
 $(BUILD_DIR)/$(BINARY): $(BUILD_DIR) $(SOURCES) internal/api/openapi.yaml.tmpl
+	go mod tidy
 	go build $(LD_ARGS) -o $(BUILD_DIR)/$(BINARY) ./cmd/myhome-presence
 
 .PHONY: clean

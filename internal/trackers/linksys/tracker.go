@@ -125,7 +125,8 @@ func (t *linksysTracker) fetchAndReportDevices(deviceReport device.ReportPresenc
 		log.Error("Unexpected response result: ", response.Result)
 		return
 	}
-	log.Debugf("Reporting %d devices", len(response.Output.Devices))
+	log.Debugf("Reporting %d device(s)", len(response.Output.Devices))
+	log.Trace("response.Output.Devices=", response.Output.Devices)
 	for _, d := range response.Output.Devices {
 		if len(d.Connections) == 1 {
 			deviceReport(toInterface(d.Connections[0], d.KnownInterfaces), nil)

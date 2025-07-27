@@ -217,7 +217,7 @@ func (r *Registry) reportPresence(itf model.Interface, optData map[string]string
 	if d == nil {
 		d = r.newDevice(itf, optData)
 		r.devices[d.Identifier] = d
-		log.Info("Discovered a new device: ", d.Identifier)
+		log.Infof("Discovered a new device: %s from interface: mac=%s ip=%s type=%s", d.Identifier, itf.MACAddress, itf.IPv4Address, itf.Type)
 	} else {
 		// Merge device properties
 		if optData != nil {

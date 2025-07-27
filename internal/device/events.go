@@ -114,12 +114,13 @@ func (r *Registry) onUpdated(d *model.Device, previousStatus model.Status, previ
 		}
 
 	case model.StatusTracked:
-		if d.Status == model.StatusIgnored {
+		switch d.Status {
+		case model.StatusIgnored:
 			log.Info("Device '", d.Description, "' is now ignored")
 			r.publish(model.EventTypeRemoved, model.DeviceRemoved{
 				Identifier: d.Identifier,
 			})
-		} else if d.Status == model.StatusTracked {
+		case model.StatusTracked:
 			// limit the number of update events
 			elapsed := time.Since(previousUpdatedAt)
 			if elapsed.Minutes() > 1 {
@@ -130,6 +131,8 @@ func (r *Registry) onUpdated(d *model.Device, previousStatus model.Status, previ
 					Properties:  d.Properties,
 					LastSeenAt:  d.LastSeenAt,
 				})
+			} else {
+				log.Warnf("Skipped update event for '%s'", d.Description)
 			}
 		}
 	}

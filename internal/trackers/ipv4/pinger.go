@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"net"
 	"os"
-	"runtime"
 	"strings"
 	"time"
 
@@ -20,10 +19,6 @@ const pingPacketDelay = 100 * time.Millisecond
 const data = "AreYouThere"
 
 func (t *ipTracker) receiveLoop(deviceReport device.ReportPresenceFunc) {
-	offset := 0
-	if runtime.GOOS == "darwin" {
-		offset = 20
-	}
 	incomingBytes := make([]byte, 32*1024)
 	log.Debug("Receiving ping packets")
 	for {
@@ -40,19 +35,19 @@ func (t *ipTracker) receiveLoop(deviceReport device.ReportPresenceFunc) {
 			break
 		}
 		log.Trace("Received ", n, " bytes: ", incomingBytes[:n])
-		if n < offset+8 {
+		if n < 8 {
 			log.Error("Failed parsing icmp message: not enough data")
 			continue
 		}
 		var m *icmp.Message
-		if m, err = icmp.ParseMessage(1, incomingBytes[offset:n]); err != nil {
+		if m, err = icmp.ParseMessage(1, incomingBytes[:n]); err != nil {
 			log.Error("Failed parsing icmp message: ", err)
 		}
 		if m.Type != ipv4.ICMPTypeEchoReply {
 			log.Trace("Ignore icmp message of type: ", *m)
 			continue
 		}
-		sequenceNumber := binary.BigEndian.Uint16(incomingBytes[offset+6 : offset+8])
+		sequenceNumber := binary.BigEndian.Uint16(incomingBytes[6:8])
 		if (uint16(t.sequenceNumber) - sequenceNumber) > 2 {
 			log.Trace("Ignore echo reply with wrong sequence: ", sequenceNumber, " expected: ", uint16(t.sequenceNumber))
 			continue

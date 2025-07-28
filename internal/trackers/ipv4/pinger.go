@@ -66,8 +66,15 @@ func (t *ipTracker) receiveLoop(deviceReport device.ReportPresenceFunc) {
 	}
 	log.Debug("Done receiving ping packets")
 }
-func (t *ipTracker) Ping(d model.Device) {
-	log.Debug("Sending ping packets")
+func (t *ipTracker) Ping(devices []model.Device) {
+	log.Debugf("Sending ping to %d device(s)", len(devices))
+	t.sequenceNumber++
+	for _, d := range devices {
+		t.ping(d)
+	}
+}
+
+func (t *ipTracker) ping(d model.Device) {
 	message := icmp.Message{
 		Type: ipv4.ICMPTypeEcho,
 		Body: &icmp.Echo{

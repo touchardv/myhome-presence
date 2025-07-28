@@ -85,7 +85,8 @@ func (r *Registry) ExecuteDeviceAction(id string, action string) error {
 	if d, found := r.devices[id]; found {
 		switch action {
 		case "contact":
-			r.watchdog.ping(d)
+			devices := []model.Device{*d}
+			r.watchdog.ping(devices)
 
 		case "ignore":
 			previousStatus := d.Status

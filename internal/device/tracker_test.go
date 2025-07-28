@@ -24,7 +24,7 @@ func (t *dummyTracker) Loop(f ReportPresenceFunc, ctx context.Context, wg *sync.
 	return nil
 }
 
-func (t *dummyTracker) Ping(device model.Device) {
+func (t *dummyTracker) Ping(device []model.Device) {
 	t.pingCount++
 }
 

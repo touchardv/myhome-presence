@@ -165,6 +165,6 @@ func toInterfaceType(macAddress string, itfs []jnapDeviceInterface) model.Interf
 	return model.InterfaceUnknown
 }
 
-func (t *linksysTracker) Ping(model.Device) {
+func (t *linksysTracker) Ping([]model.Device) {
 	// Nothing to be done here. The tracker is purely asynchronous.
 }

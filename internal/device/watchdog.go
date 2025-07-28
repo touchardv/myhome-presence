@@ -70,16 +70,22 @@ func (w *watchdog) stop() {
 
 func (w *watchdog) pingMissingDevices(r *Registry, now time.Time) {
 	devices := r.GetDevices(model.StatusTracked)
+	missingDevices := []model.Device{}
 	for _, d := range devices {
 		elapsedMinutes := now.Sub(d.LastSeenAt).Minutes()
 		if elapsedMinutes >= 5 {
-			w.ping(&d)
+			missingDevices = append(missingDevices, d)
 		}
+	}
+	if len(missingDevices) > 0 {
+		w.ping(missingDevices)
+	} else {
+		log.Debug("No missing devices to ping")
 	}
 }
 
-func (w *watchdog) ping(d *model.Device) {
+func (w *watchdog) ping(devices []model.Device) {
 	for _, t := range w.trackers {
-		t.Ping(*d)
+		t.Ping(devices)
 	}
 }

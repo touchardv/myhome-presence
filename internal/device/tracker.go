@@ -22,7 +22,7 @@ const (
 type Tracker interface {
 	Loop(deviceReport ReportPresenceFunc, ctx context.Context, wg *sync.WaitGroup) error
 
-	Ping(model.Device)
+	Ping([]model.Device)
 }
 
 // NewTrackerFunc is a factory function for instantiating a new Tracker.

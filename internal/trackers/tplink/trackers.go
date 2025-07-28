@@ -92,7 +92,7 @@ func (t *tplinkTracker) Loop(deviceReport device.ReportPresenceFunc, ctx context
 	}
 }
 
-func (t *tplinkTracker) Ping(model.Device) {
+func (t *tplinkTracker) Ping([]model.Device) {
 	// Nothing to be done here. The tracker is purely asynchronous.
 }
 

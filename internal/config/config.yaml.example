@@ -10,7 +10,9 @@ server:
   swagger_ui_url: https://validator.swagger.io
 
 trackers:
-  ipv4: {}
+  ipv4:
+    ping_packet_count: 3
+    ping_packet_delay: 250ms
   bluetooth: {}
   tplink-c2600:
     url: http://192.10.20.1

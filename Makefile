@@ -53,7 +53,10 @@ run: $(BUILD_DIR)/$(BINARY)
 	$(BUILD_DIR)/$(BINARY) --config-location=`pwd` --data-location=`pwd` --log-level=debug
 
 run-image:
-	docker run -it --rm $(IMAGE):$(TAG)
+	docker run -it --rm \
+		-v `pwd`/config.yaml:/etc/myhome/config.yaml \
+		-v `pwd`/devices.yaml:/var/lib/myhome/devices.yaml \
+		$(IMAGE):$(TAG)
 
 setup-systemd-service:
 	ssh $(TARGET) sudo mkdir -p /etc/myhome /var/lib/myhome /var/log/myhome

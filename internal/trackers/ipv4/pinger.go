@@ -2,6 +2,7 @@ package ipv4
 
 import (
 	"encoding/binary"
+	"errors"
 	"net"
 	"os"
 	"strings"
@@ -14,8 +15,8 @@ import (
 	"golang.org/x/net/ipv4"
 )
 
-const pingPacketCount = 5
-const pingPacketDelay = 100 * time.Millisecond
+const defaultPingPacketCount = 5
+const defaultPingPacketDelay = 100 * time.Millisecond
 const data = "AreYouThere"
 
 func (t *ipTracker) receiveLoop(deviceReport device.ReportPresenceFunc) {
@@ -48,7 +49,7 @@ func (t *ipTracker) receiveLoop(deviceReport device.ReportPresenceFunc) {
 			continue
 		}
 		sequenceNumber := binary.BigEndian.Uint16(incomingBytes[6:8])
-		if (uint16(t.sequenceNumber) - sequenceNumber) > 2 {
+		if (uint16(t.sequenceNumber) - sequenceNumber) > 0 {
 			log.Trace("Ignore echo reply with wrong sequence: ", sequenceNumber, " expected: ", uint16(t.sequenceNumber))
 			continue
 		}
@@ -61,15 +62,20 @@ func (t *ipTracker) receiveLoop(deviceReport device.ReportPresenceFunc) {
 	}
 	log.Debug("Done receiving ping packets")
 }
+
 func (t *ipTracker) Ping(devices []model.Device) {
 	log.Debugf("Sending ping to %d device(s)", len(devices))
 	t.sequenceNumber++
 	for _, d := range devices {
-		t.ping(d)
+		err := t.ping(d)
+		if err != nil {
+			log.Warn("Ping failed: ", err)
+			return
+		}
 	}
 }
 
-func (t *ipTracker) ping(d model.Device) {
+func (t *ipTracker) ping(d model.Device) error {
 	message := icmp.Message{
 		Type: ipv4.ICMPTypeEcho,
 		Body: &icmp.Echo{
@@ -80,15 +86,18 @@ func (t *ipTracker) ping(d model.Device) {
 	}
 	outgoingBytes, _ := message.Marshal(nil)
 
-	for i := 1; i <= pingPacketCount; i++ {
+	for i := 1; i <= t.pingPacketCount; i++ {
 		for _, itf := range d.Interfaces {
 			if itf.Type == model.InterfaceEthernet ||
 				itf.Type == model.InterfaceWifi {
-				log.Debugf("Sending ping packet to %s (%s) %d/%d ", d.Identifier, itf.IPv4Address, i, pingPacketCount)
+				log.Debugf("Sending ping packet to %s (%s) %d/%d ", d.Identifier, itf.IPv4Address, i, t.pingPacketCount)
 				targetIP := net.ParseIP(itf.IPv4Address)
 				targetAddr := &net.UDPAddr{IP: targetIP}
 				_, err := t.socket.WriteTo(outgoingBytes, targetAddr)
 				if err != nil {
+					if errors.Is(err, net.ErrClosed) {
+						return err
+					}
 					msg := err.Error()
 					if !strings.Contains(msg, "sendto: host is down") && !strings.Contains(msg, "no route to host") && !strings.Contains(msg, "sendto: network is unreachable") {
 						log.Warn("Ping failed: ", err)
@@ -96,7 +105,10 @@ func (t *ipTracker) ping(d model.Device) {
 				}
 			}
 		}
-		time.Sleep(pingPacketDelay)
+		if t.pingPacketCount > 1 {
+			time.Sleep(t.pingPacketDelay)
+		}
 	}
-	log.Debug("Done sending ping packets")
+	log.Debugf("Done sending ping packet(s) to %s ", d.Identifier)
+	return nil
 }

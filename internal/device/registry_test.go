@@ -123,7 +123,7 @@ func TestReportPresenceOfANewDevice(t *testing.T) {
 	assert.NotZero(t, devices[0].FirstSeenAt)
 	assert.NotZero(t, devices[0].LastSeenAt)
 	assert.Equal(t, model.InterfaceBluetooth, devices[0].Interfaces[0].Type)
-	assert.Equal(t, "12:34:56:78:9a", devices[0].Interfaces[0].MACAddress)
+	assert.Equal(t, "12:34:56:78:9A", devices[0].Interfaces[0].MACAddress)
 	assert.Equal(t, model.StatusDiscovered, devices[0].Status)
 }
 

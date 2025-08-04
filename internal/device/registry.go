@@ -182,7 +182,7 @@ func (r *Registry) lookupDevice(itf model.Interface) *model.Device {
 				match = match && (itf.Type == di.Type)
 			}
 			if len(itf.MACAddress) > 0 {
-				match = match && (itf.MACAddress == di.MACAddress)
+				match = match && (strings.EqualFold(itf.MACAddress, di.MACAddress))
 			}
 			if len(itf.IPv4Address) > 0 {
 				match = match && (itf.IPv4Address == di.IPv4Address)
@@ -213,7 +213,6 @@ func (r *Registry) reportPresence(itf model.Interface, optData map[string]string
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
-	itf = sanitized(itf)
 	d := r.lookupDevice(itf)
 	if d == nil {
 		d = r.newDevice(itf, optData)
@@ -242,14 +241,6 @@ func (r *Registry) reportPresence(itf model.Interface, optData map[string]string
 			d.UpdatedAt = now
 			r.onUpdated(d, d.Status, previousUpdatedAt)
 		}
-	}
-}
-
-func sanitized(in model.Interface) model.Interface {
-	return model.Interface{
-		Type:        in.Type,
-		MACAddress:  strings.ToLower(in.MACAddress),
-		IPv4Address: in.IPv4Address,
 	}
 }
 

@@ -209,37 +209,41 @@ func (r *Registry) RemoveDevice(id string) error {
 	return ErrNotFound
 }
 
-func (r *Registry) reportPresence(itf model.Interface, optData map[string]string) {
+func (r *Registry) reportPresence(itfs []model.DetectedInterface) {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
-	d := r.lookupDevice(itf)
-	if d == nil {
-		d = r.newDevice(itf, optData)
-		r.devices[d.Identifier] = d
-		log.Infof("Discovered a new device: %s from interface: mac=%s ip=%s type=%s", d.Identifier, itf.MACAddress, itf.IPv4Address, itf.Type)
-	} else {
-		// Merge device properties
-		if optData != nil {
-			if d.Properties == nil {
-				d.Properties = optData
-			} else {
-				maps.Copy(d.Properties, optData)
-			}
-		}
-
-		now := time.Now()
-		if !d.Present {
-			d.FirstSeenAt = now
-			d.LastSeenAt = now
-			d.Present = true
-			d.UpdatedAt = now
-			r.onPresenceUpdated(d)
+	for _, detected := range itfs {
+		itf := detected.Interface
+		optData := detected.Data
+		d := r.lookupDevice(itf)
+		if d == nil {
+			d = r.newDevice(itf, optData)
+			r.devices[d.Identifier] = d
+			log.Infof("Discovered a new device: %s from interface: mac=%s ip=%s type=%s", d.Identifier, itf.MACAddress, itf.IPv4Address, itf.Type)
 		} else {
-			d.LastSeenAt = now
-			previousUpdatedAt := d.UpdatedAt
-			d.UpdatedAt = now
-			r.onUpdated(d, d.Status, previousUpdatedAt)
+			// Merge device properties
+			if optData != nil {
+				if d.Properties == nil {
+					d.Properties = optData
+				} else {
+					maps.Copy(d.Properties, optData)
+				}
+			}
+
+			now := time.Now()
+			if !d.Present {
+				d.FirstSeenAt = now
+				d.LastSeenAt = now
+				d.Present = true
+				d.UpdatedAt = now
+				r.onPresenceUpdated(d)
+			} else {
+				d.LastSeenAt = now
+				previousUpdatedAt := d.UpdatedAt
+				d.UpdatedAt = now
+				r.onUpdated(d, d.Status, previousUpdatedAt)
+			}
 		}
 	}
 }

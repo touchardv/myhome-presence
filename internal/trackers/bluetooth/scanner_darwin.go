@@ -94,7 +94,8 @@ func (mgr *btDarwinManager) DidDiscoverPeripheral(cmgr cbgo.CentralManager, p cb
 		Type:       model.InterfaceBluetooth,
 		MACAddress: p.Identifier().String(), // on OSX this is not a MACAddress but a UUID
 	}
-	mgr.report(itf, props)
+	mgr.report([]model.DetectedInterface{{Interface: itf, Data: props}})
+
 }
 
 func (mgr *btDarwinManager) stopScan() {

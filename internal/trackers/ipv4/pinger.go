@@ -57,7 +57,7 @@ func (t *ipTracker) receiveLoop(deviceReport device.ReportPresenceFunc) {
 		case *net.UDPAddr:
 			log.Debug("Got reply from: ", addr.IP.String())
 			itf := model.Interface{Type: model.InterfaceUnknown, IPv4Address: addr.IP.String()}
-			deviceReport(itf, nil)
+			deviceReport([]model.DetectedInterface{{Interface: itf}})
 		}
 	}
 	log.Debug("Done receiving ping packets")

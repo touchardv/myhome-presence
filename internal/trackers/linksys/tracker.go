@@ -126,11 +126,20 @@ func (t *linksysTracker) fetchAndReportDevices(deviceReport device.ReportPresenc
 		return
 	}
 	log.Debugf("Reporting %d device(s)", len(response.Output.Devices))
-	log.Trace("response.Output.Devices=", response.Output.Devices)
-	for _, d := range response.Output.Devices {
+	itfs := []model.DetectedInterface{}
+	for i, d := range response.Output.Devices {
+		log.Tracef("response.Output.Devices[%d]=%+v", i, response.Output.Devices[i])
 		if len(d.Connections) == 1 {
-			deviceReport(toInterface(d.Connections[0], d.KnownInterfaces), nil)
+			itfs = append(itfs, model.DetectedInterface{Interface: toInterface(d.Connections[0], d.KnownInterfaces)})
+		} else {
+			if len(d.Connections) > 1 {
+				log.Warnf("Found %d connections for %s: ", len(d.Connections), d.DeviceID)
+			}
+			itfs = append(itfs, model.DetectedInterface{Interface: toInterface(d.Connections[0], d.KnownInterfaces)})
 		}
+	}
+	if len(itfs) > 0 {
+		deviceReport(itfs)
 	}
 	t.lastChangeRevision = response.Output.Revision
 }
@@ -155,10 +164,14 @@ func toInterface(conn jnapDeviceConnection, itfs []jnapDeviceInterface) model.In
 func toInterfaceType(macAddress string, itfs []jnapDeviceInterface) model.InterfaceType {
 	for _, itf := range itfs {
 		if itf.MACAddress == macAddress {
-			if itf.InterfaceType == "Wired" {
+			switch itf.InterfaceType {
+			case "Wired":
 				return model.InterfaceEthernet
-			} else if itf.InterfaceType == "Wireless" {
+			case "Wireless":
 				return model.InterfaceWifi
+			default:
+				log.Warnf("Unknown interface for mac=%s itf=%+v", macAddress, itf)
+				return model.InterfaceUnknown
 			}
 		}
 	}

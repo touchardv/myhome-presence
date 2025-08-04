@@ -130,13 +130,12 @@ func TestValidHTTPResponseWithDevice(t *testing.T) {
 	server := mockHTTPServerReturningResponse(t, json)
 	defer server.Close()
 
-	var noProps map[string]string
 	m := new(reportMock)
-	m.On("report", model.Interface{
+	m.On("report", []model.DetectedInterface{{Interface: model.Interface{
 		Type:        model.InterfaceEthernet,
 		IPv4Address: "192.168.1.2",
 		MACAddress:  "AB:CD:EF:12:34:56",
-	}, noProps)
+	}}})
 	tracker := linksysTracker{
 		baseURL: server.URL,
 	}
@@ -160,6 +159,6 @@ type reportMock struct {
 	mock.Mock
 }
 
-func (m *reportMock) report(itf model.Interface, props map[string]string) {
-	m.Called(itf, props)
+func (m *reportMock) report(reports []model.DetectedInterface) {
+	m.Called(reports)
 }

@@ -9,9 +9,9 @@ import (
 	"github.com/touchardv/myhome-presence/pkg/model"
 )
 
-// ReportPresenceFunc is a function that can be used by a Tracker to report the presence of a given device interface.
-// Optionally some data related to the inteface/device may be provided.
-type ReportPresenceFunc func(model.Interface, map[string]string)
+// ReportPresenceFunc is a function that can be used by a Tracker to report the presence of one or more detected device interfaces.
+// Optionally some data related to the interface/device may be provided.
+type ReportPresenceFunc func([]model.DetectedInterface)
 
 const (
 	ReportDataSuggestedIdentifier  = "Identifier"

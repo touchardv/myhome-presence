@@ -15,6 +15,12 @@ type Interface struct {
 	IPv4Address string
 }
 
+// DetectedInterface is an interface being reported by a tracker
+type DetectedInterface struct {
+	Interface
+	Data map[string]string
+}
+
 const (
 	// InterfaceUnknown corresponds to an unsupported/unknown interface
 	InterfaceUnknown InterfaceType = iota

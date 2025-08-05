@@ -91,9 +91,8 @@ func (t *linksysTracker) Loop(deviceReport device.ReportPresenceFunc, ctx contex
 }
 
 func (t *linksysTracker) fetchAndReportDevices(deviceReport device.ReportPresenceFunc, _ context.Context) {
-	log.Debugf("Fetching devices since: %d", t.lastChangeRevision)
 	url := fmt.Sprintf("%s/JNAP/", t.baseURL)
-	req, _ := http.NewRequest("POST", url, strings.NewReader(toJSON(t.lastChangeRevision)))
+	req, _ := http.NewRequest("POST", url, strings.NewReader("{}"))
 	req.Header.Add("Content-Type", "application/json; charset=UTF-8")
 	req.Header.Add("X-Jnap-Action", "http://linksys.com/jnap/devicelist/GetDevices3")
 	req.Header.Add("X-Jnap-Authorization", t.auth)
@@ -129,27 +128,19 @@ func (t *linksysTracker) fetchAndReportDevices(deviceReport device.ReportPresenc
 	itfs := []model.DetectedInterface{}
 	for i, d := range response.Output.Devices {
 		log.Tracef("response.Output.Devices[%d]=%+v", i, response.Output.Devices[i])
-		if len(d.Connections) == 1 {
-			itfs = append(itfs, model.DetectedInterface{Interface: toInterface(d.Connections[0], d.KnownInterfaces)})
-		} else {
-			if len(d.Connections) > 1 {
-				log.Warnf("Found %d connections for %s: ", len(d.Connections), d.DeviceID)
-			}
-			itfs = append(itfs, model.DetectedInterface{Interface: toInterface(d.Connections[0], d.KnownInterfaces)})
+		if len(d.Connections) == 0 {
+			continue
 		}
+		if len(d.Connections) > 1 {
+			log.Warnf("Found %d connections for %s: ", len(d.Connections), d.DeviceID)
+		}
+		itfs = append(itfs, model.DetectedInterface{Interface: toInterface(d.Connections[0], d.KnownInterfaces)})
 	}
+
 	if len(itfs) > 0 {
 		deviceReport(itfs)
 	}
 	t.lastChangeRevision = response.Output.Revision
-}
-
-func toJSON(lastChangeRevision int) string {
-	if lastChangeRevision > noRevision {
-		return fmt.Sprintf(`{"sinceRevision": %d}`, lastChangeRevision)
-	} else {
-		return "{}"
-	}
 }
 
 func toInterface(conn jnapDeviceConnection, itfs []jnapDeviceInterface) model.Interface {
@@ -170,7 +161,6 @@ func toInterfaceType(macAddress string, itfs []jnapDeviceInterface) model.Interf
 			case "Wireless":
 				return model.InterfaceWifi
 			default:
-				log.Warnf("Unknown interface for mac=%s itf=%+v", macAddress, itf)
 				return model.InterfaceUnknown
 			}
 		}

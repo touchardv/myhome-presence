@@ -150,7 +150,7 @@ func (r *Registry) onRemoved(d *model.Device) {
 
 func (r *Registry) publish(t model.EventType, itf interface{}) {
 	if r.mqttClient == nil {
-		log.Debugf("Event: %s - %s", t.String(), itf)
+		log.Debugf("Event: %s - %+v", t.String(), itf)
 		return
 	}
 	data, err := json.Marshal(itf)

@@ -13,11 +13,6 @@ import (
 	"github.com/touchardv/myhome-presence/pkg/model"
 )
 
-func TestToJSON(t *testing.T) {
-	assert.Equal(t, `{}`, toJSON(-1))
-	assert.Equal(t, `{"sinceRevision": 123}`, toJSON(123))
-}
-
 func TestNew(t *testing.T) {
 	cfg := config.Settings{
 		"auth":                  "XZY",

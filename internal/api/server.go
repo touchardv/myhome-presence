@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"fmt"
-	"net"
 	"net/http"
 	"time"
 
@@ -37,12 +36,9 @@ func NewServer(cfg config.Server, r *device.Registry) *Server {
 		handlers.AllowedMethods([]string{"DELETE", "GET", "POST", "PUT"}),
 		handlers.AllowCredentials())
 
-	url := fmt.Sprintf("%s/?url=http://%s:%d/api/docs", cfg.SwaggerUIURL, getServerIPAddress(cfg.Address), cfg.Port)
-	router.Handle("/", http.RedirectHandler(url, http.StatusPermanentRedirect)).Methods("GET")
+	router.Handle("/", GetSwaggerUIHandler(cfg, "/api/docs")).Methods("GET")
 	router.HandleFunc("/health-check", healthCheck).Methods("GET")
-	router.HandleFunc("/api/docs", func(w http.ResponseWriter, r *http.Request) {
-		getSwaggerDocument(w, r, cfg)
-	}).Methods("GET")
+	router.HandleFunc("/api/docs", GetOpenAPISpecificationDocument(cfg)).Methods("GET")
 	router.HandleFunc("/api/devices", apiContext.registerDevice).Methods("POST")
 	router.HandleFunc("/api/devices/{id}", apiContext.unregisterDevice).Methods("DELETE")
 	router.HandleFunc("/api/devices/{id}", apiContext.findDevice).Methods("GET")
@@ -64,30 +60,12 @@ func NewServer(cfg config.Server, r *device.Registry) *Server {
 	}
 }
 
-func getServerIPAddress(cfgAddr string) string {
-	if cfgAddr == "0.0.0.0" {
-		addrs, err := net.InterfaceAddrs()
-		if err == nil {
-			for _, addr := range addrs {
-				if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-					if ipnet.IP.To4() != nil {
-						return ipnet.IP.String()
-					}
-				}
-			}
-		}
-	} else {
-		return cfgAddr
-	}
-	return "127.0.0.1"
-}
-
 // Start runs the HTTP server (in the background).
 func (s *Server) Start() {
 	log.Info("Starting: http server")
 	go func() {
 		server := s.server
-		log.Info("Listening on: " + server.Addr)
+		log.Info("Listening on: http://", server.Addr)
 		err := server.ListenAndServe()
 		if err != nil && err != http.ErrServerClosed {
 			log.Error(err)

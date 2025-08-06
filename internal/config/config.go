@@ -21,7 +21,9 @@ type MQTT struct {
 // Server contains the local web server configuration.
 type Server struct {
 	Address      string `yaml:"address"`
+	Hostname     string `yaml:"hostname"`
 	Port         uint   `yaml:"port"`
+	SSL          bool   `yaml:"ssl"`
 	SwaggerUIURL string `yaml:"swagger_ui_url"`
 }
 

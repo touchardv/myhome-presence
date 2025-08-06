@@ -11,7 +11,7 @@ info:
     url: http://opensource.org/licenses/MIT
   version: 0.0.4
 servers:
-- url: http://{{ .address }}:{{ .port }}/api
+- url: {{ .serverBaseURL }}/api
 paths:
   /devices:
     get:

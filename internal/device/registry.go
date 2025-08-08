@@ -25,6 +25,7 @@ var (
 // Registry maintains the status of all tracked devices
 // together with their presence status.
 type Registry struct {
+	cfg        config.Config
 	devices    map[string]*model.Device
 	mutex      *sync.RWMutex
 	mqttClient MQTT.Client
@@ -43,6 +44,7 @@ func NewRegistry(cfg config.Config) *Registry {
 		mqttClient = newMQTTClient(cfg.MQTTServer)
 	}
 	return &Registry{
+		cfg:        cfg,
 		devices:    devices,
 		mutex:      &sync.RWMutex{},
 		mqttClient: mqttClient,
@@ -248,10 +250,39 @@ func (r *Registry) reportPresence(itfs []model.DetectedInterface) {
 	}
 }
 
+func (r *Registry) saveDevices() {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	devices := []model.Device{}
+	for d := range maps.Values(r.devices) {
+		devices = append(devices, *d)
+	}
+	r.cfg.Save(devices)
+}
+
+func (r *Registry) saveLoop(ctx context.Context) {
+	save := time.NewTimer(1 * time.Hour)
+
+saveLoop:
+	for {
+		select {
+		case <-save.C:
+			r.saveDevices()
+			save.Reset(1 * time.Hour)
+
+		case <-ctx.Done():
+			save.Stop()
+			break saveLoop
+		}
+	}
+}
+
 // Start activates the tracking of devices.
 func (r *Registry) Start(ctx context.Context) {
 	log.Info("Starting: registry")
 	go r.connect(ctx)
+	go r.saveLoop(ctx)
 	go r.watchdog.loop(r, ctx)
 }
 
@@ -260,6 +291,7 @@ func (r *Registry) Stop() {
 	log.Info("Stopping: registry")
 	r.watchdog.stop()
 	r.disconnect()
+	r.saveDevices()
 	log.Info("Stopped: registry")
 }
 

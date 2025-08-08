@@ -16,7 +16,6 @@ import (
 	"github.com/touchardv/myhome-presence/internal/trackers/ipv4"
 	"github.com/touchardv/myhome-presence/internal/trackers/linksys"
 	"github.com/touchardv/myhome-presence/internal/trackers/tplink"
-	"github.com/touchardv/myhome-presence/pkg/model"
 )
 
 var (
@@ -40,13 +39,13 @@ func main() {
 	defer close()
 
 	log.Info("Starting...")
-	config := config.Retrieve(*configLocation, *dataLocation)
+	cfg := config.Retrieve(*configLocation, *dataLocation)
 	bluetooth.EnableTracker()
 	ipv4.EnableTracker()
 	linksys.EnableTracker()
 	tplink.EnableTrackers()
-	registry := device.NewRegistry(config)
-	server := api.NewServer(config.Server, registry)
+	registry := device.NewRegistry(cfg)
+	server := api.NewServer(cfg.Server, registry)
 
 	ctx, stopFunc := context.WithCancel(context.Background())
 	registry.Start(ctx)
@@ -59,7 +58,6 @@ func main() {
 	server.Stop()
 	stopFunc()
 	registry.Stop()
-	config.Save(registry.GetDevices(model.StatusUndefined))
 	log.Info("...Stopped")
 	log.Exit(0)
 }

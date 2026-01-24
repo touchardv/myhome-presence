@@ -132,7 +132,7 @@ func (t *linksysTracker) fetchAndReportDevices(deviceReport device.ReportPresenc
 			continue
 		}
 		if len(d.Connections) > 1 {
-			log.Warnf("Found %d connections for %s: ", len(d.Connections), d.DeviceID)
+			log.Warnf("Found %d connections for %s", len(d.Connections), d.DeviceID)
 		}
 		itfs = append(itfs, model.DetectedInterface{Interface: toInterface(d.Connections[0], d.KnownInterfaces)})
 	}

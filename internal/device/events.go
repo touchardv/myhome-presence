@@ -78,6 +78,7 @@ func (r *Registry) onAdded(d *model.Device) {
 		Identifier:  d.Identifier,
 		Present:     d.Present,
 		Properties:  d.Properties,
+		FirstSeenAt: d.FirstSeenAt,
 		LastSeenAt:  d.LastSeenAt,
 	})
 }
@@ -93,9 +94,10 @@ func (r *Registry) onPresenceUpdated(d *model.Device) {
 		log.Info("Device '", d.Description, "' is not present")
 	}
 	r.publish(model.EventTypePresenceUpdated, model.DevicePresenceUpdated{
-		Identifier: d.Identifier,
-		Present:    d.Present,
-		LastSeenAt: d.LastSeenAt,
+		Identifier:  d.Identifier,
+		Present:     d.Present,
+		FirstSeenAt: d.FirstSeenAt,
+		LastSeenAt:  d.LastSeenAt,
 	})
 }
 
@@ -109,6 +111,7 @@ func (r *Registry) onUpdated(d *model.Device, previousStatus model.Status, previ
 				Identifier:  d.Identifier,
 				Present:     d.Present,
 				Properties:  d.Properties,
+				FirstSeenAt: d.FirstSeenAt,
 				LastSeenAt:  d.LastSeenAt,
 			})
 		}
@@ -129,6 +132,7 @@ func (r *Registry) onUpdated(d *model.Device, previousStatus model.Status, previ
 					Description: d.Description,
 					Present:     d.Present,
 					Properties:  d.Properties,
+					FirstSeenAt: d.FirstSeenAt,
 					LastSeenAt:  d.LastSeenAt,
 				})
 			} else {

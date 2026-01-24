@@ -69,13 +69,15 @@ type DeviceAdded struct {
 	Identifier  string            `json:"identifier"`
 	Present     bool              `json:"present"`
 	Properties  map[string]string `json:"properties"`
+	FirstSeenAt time.Time         `json:"first_seen_at"`
 	LastSeenAt  time.Time         `json:"last_seen_at"`
 }
 
 type DevicePresenceUpdated struct {
-	Identifier string    `json:"identifier"`
-	Present    bool      `json:"present"`
-	LastSeenAt time.Time `json:"last_seen_at"`
+	Identifier  string    `json:"identifier"`
+	Present     bool      `json:"present"`
+	FirstSeenAt time.Time `json:"first_seen_at"`
+	LastSeenAt  time.Time `json:"last_seen_at"`
 }
 
 type DeviceUpdated struct {
@@ -83,6 +85,7 @@ type DeviceUpdated struct {
 	Identifier  string            `json:"identifier"`
 	Present     bool              `json:"present"`
 	Properties  map[string]string `json:"properties"`
+	FirstSeenAt time.Time         `json:"first_seen_at"`
 	LastSeenAt  time.Time         `json:"last_seen_at"`
 }
 

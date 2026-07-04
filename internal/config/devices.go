@@ -18,7 +18,7 @@ func load(location string, name string) ([]model.Device, error) {
 	}
 	log.Debug("Loading data from: ", filename)
 	content, err := os.ReadFile(filename)
-	devices := make([]model.Device, 10)
+	var devices []model.Device
 	if err == nil {
 		err = yaml.Unmarshal(content, &devices)
 	}
@@ -48,7 +48,11 @@ func save(devices []model.Device, location string, name string) error {
 	if err == nil {
 		filename := filepath.Join(location, name)
 		log.Debug("Saving devices to: ", filename)
-		err = os.WriteFile(filename, bytes, 0644)
+		tmpFile := filename + ".tmp"
+		err = os.WriteFile(tmpFile, bytes, 0644)
+		if err == nil {
+			err = os.Rename(tmpFile, filename)
+		}
 	}
 	return err
 }

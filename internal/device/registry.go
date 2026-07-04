@@ -144,12 +144,17 @@ func (r *Registry) newDevice(itf model.Interface, optData map[string]string) *mo
 	if _, found := r.devices[id]; found {
 		id = fmt.Sprintf("%s-%s", id, now.Format(time.RFC3339))
 	}
+	var props map[string]string
+	if optData != nil {
+		props = make(map[string]string)
+		maps.Copy(props, optData)
+	}
 	return &model.Device{
 		Description: description(optData, now),
 		Identifier:  id,
 		Interfaces:  []model.Interface{itf},
 		Present:     true,
-		Properties:  optData,
+		Properties:  props,
 		CreatedAt:   now,
 		FirstSeenAt: now,
 		LastSeenAt:  now,
@@ -227,10 +232,9 @@ func (r *Registry) reportPresence(itfs []model.DetectedInterface) {
 			// Merge device properties
 			if optData != nil {
 				if d.Properties == nil {
-					d.Properties = optData
-				} else {
-					maps.Copy(d.Properties, optData)
+					d.Properties = make(map[string]string)
 				}
+				maps.Copy(d.Properties, optData)
 			}
 
 			now := time.Now()
@@ -251,13 +255,12 @@ func (r *Registry) reportPresence(itfs []model.DetectedInterface) {
 }
 
 func (r *Registry) saveDevices() {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
-
-	devices := []model.Device{}
+	r.mutex.RLock()
+	devices := make([]model.Device, 0, len(r.devices))
 	for d := range maps.Values(r.devices) {
 		devices = append(devices, *d)
 	}
+	r.mutex.RUnlock()
 	r.cfg.Save(devices)
 }
 

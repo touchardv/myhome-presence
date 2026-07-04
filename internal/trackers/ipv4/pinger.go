@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -49,8 +50,9 @@ func (t *ipTracker) receiveLoop(deviceReport device.ReportPresenceFunc) {
 			continue
 		}
 		sequenceNumber := binary.BigEndian.Uint16(incomingBytes[6:8])
-		if (uint16(t.sequenceNumber) - sequenceNumber) > 0 {
-			log.Trace("Ignore echo reply with wrong sequence: ", sequenceNumber, " expected: ", uint16(t.sequenceNumber))
+		expectedSeq := uint16(atomic.LoadInt32(&t.sequenceNumber))
+		if expectedSeq != sequenceNumber {
+			log.Trace("Ignore echo reply with wrong sequence: ", sequenceNumber, " expected: ", expectedSeq)
 			continue
 		}
 		switch addr := remoteAddr.(type) {
@@ -65,9 +67,9 @@ func (t *ipTracker) receiveLoop(deviceReport device.ReportPresenceFunc) {
 
 func (t *ipTracker) Ping(devices []model.Device) {
 	log.Debugf("Sending ping to %d device(s)", len(devices))
-	t.sequenceNumber++
+	seq := atomic.AddInt32(&t.sequenceNumber, 1)
 	for _, d := range devices {
-		err := t.ping(d)
+		err := t.ping(d, int(seq))
 		if err != nil {
 			log.Warn("Ping failed: ", err)
 			return
@@ -75,12 +77,12 @@ func (t *ipTracker) Ping(devices []model.Device) {
 	}
 }
 
-func (t *ipTracker) ping(d model.Device) error {
+func (t *ipTracker) ping(d model.Device, seq int) error {
 	message := icmp.Message{
 		Type: ipv4.ICMPTypeEcho,
 		Body: &icmp.Echo{
 			ID:   os.Getpid(),
-			Seq:  t.sequenceNumber,
+			Seq:  seq,
 			Data: []byte(data),
 		},
 	}

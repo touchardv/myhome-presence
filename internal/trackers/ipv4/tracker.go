@@ -18,7 +18,7 @@ func EnableTracker() {
 type ipTracker struct {
 	pingPacketCount int
 	pingPacketDelay time.Duration
-	sequenceNumber  int
+	sequenceNumber  int32
 	socket          *icmp.PacketConn
 	stopReceiving   bool
 }

@@ -15,7 +15,7 @@ func TestNew(t *testing.T) {
 	tracker := tr.(*ipTracker)
 	assert.Equal(t, 5, tracker.pingPacketCount)
 	assert.Equal(t, 100*time.Millisecond, tracker.pingPacketDelay)
-	assert.Equal(t, 0, tracker.sequenceNumber)
+	assert.Equal(t, int32(0), tracker.sequenceNumber)
 
 	cfg["ping_packet_count"] = "1"
 	cfg["ping_packet_delay"] = "250ms"

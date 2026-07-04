@@ -39,6 +39,6 @@ func newTracker(name string, settings config.Settings) Tracker {
 	if f, ok := factories[name]; ok {
 		return f(settings)
 	}
-	log.Fatal("No suck tracker: ", name)
+	log.Fatal("No such tracker: ", name)
 	return nil
 }
